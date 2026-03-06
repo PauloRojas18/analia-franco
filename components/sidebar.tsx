@@ -3,14 +3,16 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import Image from "next/image"
-import { LayoutGrid, Users, GraduationCap, ScanBarcode, FileText, Menu, X } from "lucide-react"
+import { LayoutGrid, Users, GraduationCap, Briefcase, HeartPulse, ScanBarcode, FileText, Menu, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 
 const navItems = [
   { href: "/", label: "Painel", icon: LayoutGrid, page: "dashboard" },
-  { href: "/pacientes", label: "Pacientes", icon: Users, page: "pacientes" },
+  { href: "/pacientes", label: "Pacientes", icon: HeartPulse, page: "pacientes" },
+  { href: "/alunos", label: "Alunos", icon: Users, page: "alunos" },
   { href: "/instrutores", label: "Instrutores", icon: GraduationCap, page: "instrutores" },
+  { href: "/trabalhadores", label: "Trabalhadores", icon: Briefcase, page: "trabalhadores" },
   { href: "/presenca", label: "Registrar Presenca", icon: ScanBarcode, page: "presenca" },
   { href: "/relatorios", label: "Relatorios", icon: FileText, page: "relatorios" },
 ]

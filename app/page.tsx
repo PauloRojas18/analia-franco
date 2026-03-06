@@ -4,16 +4,16 @@ import { Users, GraduationCap, CalendarCheck, UserCheck, Clock } from "lucide-re
 
 const stats = [
   {
-    label: "Total de Pacientes",
+    label: "Total de Pacientes e Alunos",
     value: 45,
-    description: "38 ativos",
+    description: "22 Alunos, 16 Pacientes, 38 Ativos",
     icon: Users,
     color: "var(--primary)"
   },
   {
-    label: "Total de Instrutores",
+    label: "Total de Instrutores e Trabalhadores",
     value: 12,
-    description: "10 ativos",
+    description: "4 Intrutores, 6 Trabalhadores, 10 Ativos",
     icon: GraduationCap,
     color: "var(--accent)"
   },
