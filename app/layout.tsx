@@ -7,8 +7,8 @@ import './globals.css'
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 
 export const metadata: Metadata = {
-  title: 'Painel - Sistema de Presenca',
-  description: 'Sistema de controle de presenca para a Casa Espirita Analia Franco',
+  title: 'Painel - Sistema de Presença',
+  description: 'Sistema de controle de presenca para a Casa Espirita Anália Franco',
   icons: {
     icon: '/images/analia.png',
   },

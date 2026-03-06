@@ -64,8 +64,8 @@ export function Sidebar() {
             />
           </div>
           <div>
-            <h1 className="text-[15px] font-semibold leading-tight">Analia Franco</h1>
-            <p className="text-[11px] opacity-55">Sistema de Presenca</p>
+            <h1 className="text-[15px] font-semibold leading-tight">Anália Franco</h1>
+            <p className="text-[11px] opacity-55">Sistema de Presença</p>
           </div>
         </div>
 
