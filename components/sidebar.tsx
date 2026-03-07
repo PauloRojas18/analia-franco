@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
 import { useState } from "react"
 
 const navItems = [
-  { href: "/", label: "Painel", icon: LayoutGrid, page: "dashboard" },
+  { href: "/dashboard", label: "Painel", icon: LayoutGrid, page: "dashboard" },
   { href: "/pacientes", label: "Pacientes", icon: HeartPulse, page: "pacientes" },
   { href: "/alunos", label: "Alunos", icon: Users, page: "alunos" },
   { href: "/instrutores", label: "Instrutores", icon: GraduationCap, page: "instrutores" },
