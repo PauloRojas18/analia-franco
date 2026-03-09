@@ -6,7 +6,6 @@ export const runtime = "nodejs";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-
     const { email, senha } = body;
 
     const usuario = await db.usuario.findUnique({
@@ -20,7 +19,17 @@ export async function POST(req: Request) {
       );
     }
 
-    return NextResponse.json({ ok: true });
+    const response = NextResponse.json({ ok: true });
+
+    response.cookies.set("sessao", usuario.id.toString(), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 8, // 8 horas
+    });
+
+    return response;
 
   } catch (error) {
     console.error(error);
@@ -30,4 +39,3 @@ export async function POST(req: Request) {
     );
   }
 }
-

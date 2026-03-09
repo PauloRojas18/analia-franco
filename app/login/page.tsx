@@ -46,7 +46,7 @@ export default function LoginPage() {
       console.log("Login API:", data)
 
       if (res.ok) {
-        // Redirecionamento SPA-style
+        console.log("Login OK, redirecionando...")
         router.push("/dashboard")
       } else {
         alert(data.error || "E-mail ou senha incorretos")
