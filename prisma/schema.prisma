@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
 }
 
 model Usuario {
@@ -78,6 +78,15 @@ model Presenca {
   trabalhador Trabalhador?  @relation(fields: [trabalhadorId], references: [id])
   aluno Aluno?  @relation(fields: [alunoId], references: [id])
 
+}
+
+model VinculoPessoa {
+  id             Int        @id @default(autoincrement())
+  codigoBarras   String     // código do crachá principal
+  tipoPrincipal  TipoPessoa
+  codigoSecund   String     // código do vínculo secundário
+  tipoSecund     TipoPessoa
+  @@unique([codigoBarras, tipoSecund])
 }
 
 enum TipoPessoa {
