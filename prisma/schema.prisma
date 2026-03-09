@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+model Usuario {
+  id Int @id @default(autoincrement())
+  email String @unique
+  senha String
+
+}
+
+model Paciente {
+  id  Int @id @default(autoincrement())
+  nome  String
+  especialidade String
+  telefone  String
+  endereco  String
+  ativo Boolean @default(true)
+  codigoBarras  String @unique
+  createdAt DateTime @default(now())
+  presencas Presenca[]
+
+}
+
+model Instrutor {
+  id Int @id @default(autoincrement())
+  nome String 
+  telefone String
+  email String @unique
+  ativo Boolean @default(true)
+  codigoBarras String @unique
+  createdAt DateTime @default(now())
+  presencas Presenca[]  
+
+}
+
+model Trabalhador {
+  id Int @id @default(autoincrement())
+  nome String 
+  telefone String
+  email String @unique
+  ativo Boolean @default(true)
+  codigoBarras String @unique
+  createdAt DateTime @default(now())
+  presencas Presenca[]  
+
+}
+
+model Aluno {
+  id Int @id @default(autoincrement())
+  nome String 
+  telefone String
+  endereco String
+  ativo Boolean @default(true)
+  codigoBarras String @unique
+  createdAt DateTime @default(now())
+  presencas Presenca[]  
+
+}
+
+model Presenca {
+  id  Int @id @default(autoincrement())
+  tipo  TipoPessoa
+  horario DateTime @default(now())
+  codigoBarras String
+
+  pacienteId  Int?
+  instrutorId Int?
+  trabalhadorId Int?
+  alunoId Int?
+
+  paciente Paciente?  @relation(fields: [pacienteId], references: [id])
+  instrutor Instrutor?  @relation(fields: [instrutorId], references: [id])
+  trabalhador Trabalhador?  @relation(fields: [trabalhadorId], references: [id])
+  aluno Aluno?  @relation(fields: [alunoId], references: [id])
+
+}
+
+enum TipoPessoa {
+  paciente
+  instrutor
+  trabalhador
+  aluno
+
+}

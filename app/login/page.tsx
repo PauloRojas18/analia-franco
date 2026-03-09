@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import Image from "next/image"
 
 const Background_Images = [
@@ -12,12 +13,15 @@ const Background_Images = [
 const SLIDE_INTERVAL_MS = 4000
 
 export default function LoginPage() {
+  const router = useRouter()
+
   const [currentSlide, setCurrentSlide] = useState(0)
   const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
 
+  // Slideshow
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % Background_Images.length)
@@ -25,12 +29,31 @@ export default function LoginPage() {
     return () => clearInterval(timer)
   }, [])
 
+  // Login handler
+ // Função de login
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
+
     try {
-      await new Promise((r) => setTimeout(r, 1500))
-      console.log("Login com:", { email, password })
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, senha: password }),
+      })
+
+      const data = await res.json()
+      console.log("Login API:", data)
+
+      if (res.ok) {
+        // Redirecionamento SPA-style
+        router.push("/dashboard")
+      } else {
+        alert(data.error || "E-mail ou senha incorretos")
+      }
+    } catch (err) {
+      console.error(err)
+      alert("Erro ao fazer login")
     } finally {
       setLoading(false)
     }
@@ -39,26 +62,24 @@ export default function LoginPage() {
   return (
     <div className="relative h-screen w-screen overflow-hidden flex items-center justify-center">
 
-      {/* 🖼️ SLIDESHOW */}
+      {/* SLIDES */}
       {Background_Images.map((img, index) => (
         <div
           key={index}
           style={{ backgroundImage: `url(${img})` }}
-          className={`
-            absolute inset-0 bg-cover bg-center
-            transition-opacity duration-1000 ease-in-out
-            ${index === currentSlide ? "opacity-100" : "opacity-0"}
-          `}
+          className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
+            index === currentSlide ? "opacity-100" : "opacity-0"
+          }`}
         />
       ))}
 
-      {/* 🌑 OVERLAY */}
+      {/* OVERLAY */}
       <div
         className="absolute inset-0"
         style={{ background: "color-mix(in srgb, var(--sidebar-bg) 75%, transparent)" }}
       />
 
-      {/* 📍 INDICADORES DO SLIDESHOW */}
+      {/* INDICADORES */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-10">
         {Background_Images.map((_, index) => (
           <button
@@ -74,28 +95,11 @@ export default function LoginPage() {
         ))}
       </div>
 
-      {/* =====================================================
-          📐 WRAPPER DE ESCALA
-
-          Por que scale(0.8)?
-          O site ficava perfeito com o browser em 80% de zoom.
-          O zoom do browser aplica exatamente scale(0.8) em tudo.
-          Replicamos isso aqui para que em 100% de zoom o card
-          apareça com o mesmo tamanho visual de antes.
-
-          Por que não reduzir px manualmente?
-          scale() é mais simples: muda um único valor (0.8) e
-          afeta tudo proporcionalmente — padding, fonte, bordas.
-          Se quiser ajustar fino, troque 0.8 por outro valor.
-          ===================================================== */}
+      {/* FORM CARD */}
       <div
         className="relative z-10"
-        style={{
-          transform: "scale(0.8)",
-          transformOrigin: "center center",
-        }}
+        style={{ transform: "scale(0.8)", transformOrigin: "center center" }}
       >
-        {/* 📋 CARD DO FORMULÁRIO */}
         <div
           style={{
             width: "400px",
@@ -109,7 +113,7 @@ export default function LoginPage() {
         >
           <div className="p-10">
 
-            {/* ── Cabeçalho ── */}
+            {/* Cabeçalho */}
             <div className="mb-8 text-center">
               <div className="relative h-[130px] w-[100px] flex items-center justify-center mx-auto mb-5 rounded-2xl">
                 <Image
@@ -120,18 +124,15 @@ export default function LoginPage() {
                   priority
                 />
               </div>
-              <h1
-                className="font-bold"
-                style={{ color: "var(--primary)", letterSpacing: "-0.3px", fontSize: "25px" }}
-              >
+              <h1 className="font-bold" style={{ color: "var(--primary)", letterSpacing: "-0.3px", fontSize: "25px" }}>
                 Bem-vindo
               </h1>
             </div>
 
-            {/* ── Formulário ── */}
+            {/* FORM */}
             <form onSubmit={handleLogin} className="flex flex-col gap-4">
 
-              {/* Campo: E-mail */}
+              {/* Email */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
                   E-mail
@@ -156,19 +157,11 @@ export default function LoginPage() {
                       color: "var(--foreground)",
                       borderRadius: "var(--radius)",
                     }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = "var(--ring)"
-                      e.target.style.boxShadow = "0 0 0 3px color-mix(in srgb, var(--ring) 20%, transparent)"
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = "var(--border)"
-                      e.target.style.boxShadow = "none"
-                    }}
                   />
                 </div>
               </div>
 
-              {/* Campo: Senha */}
+              {/* Senha */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
                   Senha
@@ -192,14 +185,6 @@ export default function LoginPage() {
                       border: "1px solid var(--border)",
                       color: "var(--foreground)",
                       borderRadius: "var(--radius)",
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = "var(--ring)"
-                      e.target.style.boxShadow = "0 0 0 3px color-mix(in srgb, var(--ring) 20%, transparent)"
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = "var(--border)"
-                      e.target.style.boxShadow = "none"
                     }}
                   />
                   <button
@@ -236,8 +221,6 @@ export default function LoginPage() {
                   borderRadius: "var(--radius)",
                   cursor: loading ? "not-allowed" : "pointer",
                 }}
-                onMouseOver={(e) => { if (!loading) (e.currentTarget as HTMLButtonElement).style.filter = "brightness(1.12)" }}
-                onMouseOut={(e) => { (e.currentTarget as HTMLButtonElement).style.filter = "none" }}
               >
                 {loading && (
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
@@ -262,6 +245,7 @@ export default function LoginPage() {
         </div>
       </div>
 
+      {/* Animação spinner */}
       <style>{`
         @keyframes spin {
           from { transform: rotate(0deg); }
