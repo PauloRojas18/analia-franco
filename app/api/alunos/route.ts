@@ -13,6 +13,7 @@ export async function GET(req: Request) {
       where: search ? {
         OR: [
           { nome: { contains: search, mode: "insensitive" } },
+          { blocoEstudo: { contains: search, mode: "insensitive" } },
           { telefone: { contains: search } },
           { codigoBarras: { contains: search, mode: "insensitive" } },
         ],
@@ -29,9 +30,9 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { nome, telefone, endereco } = await req.json()
+    const { nome, blocoEstudo, telefone, endereco } = await req.json()
 
-    if (!nome || !telefone || !endereco) {
+    if (!nome || !blocoEstudo || !telefone || !endereco) {
       return NextResponse.json({ error: "Todos os campos são obrigatórios" }, { status: 400 })
     }
 
@@ -45,7 +46,7 @@ export async function POST(req: Request) {
       : "000001"
 
     const aluno = await db.aluno.create({
-      data: { nome, telefone, endereco, codigoBarras: `CEFASA${proximoNum}` },
+      data: { nome, blocoEstudo, telefone, endereco, codigoBarras: `CEFASA${proximoNum}` },
     })
 
     return NextResponse.json(aluno, { status: 201 })

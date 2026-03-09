@@ -7,11 +7,11 @@ export const runtime = "nodejs"
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const { nome, telefone, endereco } = await req.json()
+    const { nome, blocoEstudo, telefone, endereco } = await req.json()
 
     const aluno = await db.aluno.update({
       where: { id: parseInt(id) },
-      data: { nome, telefone, endereco },
+      data: { nome, blocoEstudo, telefone, endereco },
     })
 
     return NextResponse.json(aluno)

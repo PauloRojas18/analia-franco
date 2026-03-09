@@ -11,6 +11,7 @@ import { Plus, Search, Pencil, UserX, UserCheck, Trash2, Loader2, X, Link2, Unli
 interface Aluno {
   id: number
   nome: string
+  blocoEstudo: string
   telefone: string
   endereco: string
   ativo: boolean
@@ -19,24 +20,15 @@ interface Aluno {
 
 interface FormData {
   nome: string
+  blocoEstudo: string
   telefone: string
   endereco: string
 }
 
-interface Vinculo {
-  tipo: string
-  nome: string
-  codigoBarras: string
-}
+interface Vinculo { tipo: string; nome: string; codigoBarras: string }
+interface ResultadoBusca { tipo: string; nome: string; codigoBarras: string }
 
-interface ResultadoBusca {
-  tipo: string
-  nome: string
-  codigoBarras: string
-}
-
-const FORM_VAZIO: FormData = { nome: "", telefone: "", endereco: "" }
-
+const FORM_VAZIO: FormData = { nome: "", blocoEstudo: "", telefone: "", endereco: "" }
 const TIPO_LABEL: Record<string, string> = {
   paciente: "Paciente", aluno: "Aluno", instrutor: "Instrutor", trabalhador: "Trabalhador",
 }
@@ -51,7 +43,6 @@ export default function AlunosPage() {
   const [form, setForm] = useState<FormData>(FORM_VAZIO)
   const [erroForm, setErroForm] = useState("")
   const [confirmandoId, setConfirmandoId] = useState<number | null>(null)
-
   const [vinculos, setVinculos] = useState<Vinculo[]>([])
   const [buscaVinculo, setBuscaVinculo] = useState("")
   const [resultadosBusca, setResultadosBusca] = useState<ResultadoBusca[]>([])
@@ -64,16 +55,12 @@ export default function AlunosPage() {
     setLoading(true)
     try {
       const res = await fetch(`/api/alunos?search=${encodeURIComponent(search)}`)
-      const data = await res.json()
-      setAlunos(data)
+      setAlunos(await res.json())
     } catch (err) { console.error("Erro ao buscar alunos", err) }
     finally { setLoading(false) }
   }, [search])
 
-  useEffect(() => {
-    const t = setTimeout(buscarAlunos, 300)
-    return () => clearTimeout(t)
-  }, [buscarAlunos])
+  useEffect(() => { const t = setTimeout(buscarAlunos, 300); return () => clearTimeout(t) }, [buscarAlunos])
 
   const buscarVinculos = useCallback(async (codigoBarras: string) => {
     try {
@@ -87,13 +74,11 @@ export default function AlunosPage() {
     const t = setTimeout(async () => {
       setBuscandoVinculo(true)
       try {
-        // Alunos podem vincular com pacientes e trabalhadores (não instrutores)
         const res = await fetch(`/api/vinculos?nome=${encodeURIComponent(buscaVinculo)}&excluirTipo=aluno`)
         const data = await res.json()
-        const filtrado = data.filter((r: ResultadoBusca) =>
+        setResultadosBusca(data.filter((r: ResultadoBusca) =>
           r.tipo !== "instrutor" && !vinculos.some(v => v.codigoBarras === r.codigoBarras)
-        )
-        setResultadosBusca(filtrado)
+        ))
         setMostrarDropdown(true)
       } catch (err) { console.error("Erro na busca", err) }
       finally { setBuscandoVinculo(false) }
@@ -104,9 +89,8 @@ export default function AlunosPage() {
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node) &&
-          buscaRef.current && !buscaRef.current.contains(e.target as Node)) {
+          buscaRef.current && !buscaRef.current.contains(e.target as Node))
         setMostrarDropdown(false)
-      }
     }
     document.addEventListener("mousedown", handler)
     return () => document.removeEventListener("mousedown", handler)
@@ -119,7 +103,7 @@ export default function AlunosPage() {
 
   function abrirEditar(a: Aluno) {
     setEditando(a)
-    setForm({ nome: a.nome, telefone: a.telefone, endereco: a.endereco })
+    setForm({ nome: a.nome, blocoEstudo: a.blocoEstudo, telefone: a.telefone, endereco: a.endereco })
     setErroForm(""); setVinculos([]); setBuscaVinculo(""); setModalAberto(true)
     buscarVinculos(a.codigoBarras)
   }
@@ -130,57 +114,34 @@ export default function AlunosPage() {
   }
 
   async function adicionarVinculo(resultado: ResultadoBusca) {
-    if (!editando) {
-      setVinculos(prev => [...prev, resultado])
-      setBuscaVinculo(""); setResultadosBusca([]); setMostrarDropdown(false)
-      return
-    }
+    if (!editando) { setVinculos(prev => [...prev, resultado]); setBuscaVinculo(""); setResultadosBusca([]); setMostrarDropdown(false); return }
     try {
-      await fetch("/api/vinculos", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          codigoBarras: editando.codigoBarras, tipoPrincipal: "aluno",
-          codigoSecund: resultado.codigoBarras, tipoSecund: resultado.tipo,
-        }),
-      })
-      setVinculos(prev => [...prev, resultado])
-      setBuscaVinculo(""); setResultadosBusca([]); setMostrarDropdown(false)
+      await fetch("/api/vinculos", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codigoBarras: editando.codigoBarras, tipoPrincipal: "aluno", codigoSecund: resultado.codigoBarras, tipoSecund: resultado.tipo }) })
+      setVinculos(prev => [...prev, resultado]); setBuscaVinculo(""); setResultadosBusca([]); setMostrarDropdown(false)
     } catch (err) { console.error("Erro ao vincular", err) }
   }
 
   async function removerVinculo(vinculo: Vinculo) {
-    if (!editando) {
-      setVinculos(prev => prev.filter(v => v.codigoBarras !== vinculo.codigoBarras))
-      return
-    }
+    if (!editando) { setVinculos(prev => prev.filter(v => v.codigoBarras !== vinculo.codigoBarras)); return }
     try {
-      await fetch("/api/vinculos", {
-        method: "DELETE", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ codigoBarras: editando.codigoBarras, tipoSecund: vinculo.tipo }),
-      })
+      await fetch("/api/vinculos", { method: "DELETE", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codigoBarras: editando.codigoBarras, tipoSecund: vinculo.tipo }) })
       setVinculos(prev => prev.filter(v => v.codigoBarras !== vinculo.codigoBarras))
     } catch (err) { console.error("Erro ao remover vínculo", err) }
   }
 
   async function salvar() {
-    if (!form.nome || !form.telefone || !form.endereco) {
-      setErroForm("Preencha todos os campos."); return
-    }
+    if (!form.nome || !form.blocoEstudo || !form.telefone || !form.endereco) { setErroForm("Preencha todos os campos."); return }
     setSalvando(true); setErroForm("")
     try {
-      const res = await fetch(
-        editando ? `/api/alunos/${editando.id}` : "/api/alunos",
-        { method: editando ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) }
-      )
+      const res = await fetch(editando ? `/api/alunos/${editando.id}` : "/api/alunos",
+        { method: editando ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) })
       if (!res.ok) { const d = await res.json(); setErroForm(d.error || "Erro ao salvar."); return }
       const salvo = await res.json()
       if (!editando && vinculos.length > 0) {
-        await Promise.all(vinculos.map(v =>
-          fetch("/api/vinculos", {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ codigoBarras: salvo.codigoBarras, tipoPrincipal: "aluno", codigoSecund: v.codigoBarras, tipoSecund: v.tipo }),
-          })
-        ))
+        await Promise.all(vinculos.map(v => fetch("/api/vinculos", { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ codigoBarras: salvo.codigoBarras, tipoPrincipal: "aluno", codigoSecund: v.codigoBarras, tipoSecund: v.tipo }) })))
       }
       fecharModal(); buscarAlunos()
     } catch { setErroForm("Erro de conexão.") }
@@ -189,25 +150,21 @@ export default function AlunosPage() {
 
   async function toggleAtivo(a: Aluno) {
     try {
-      await fetch(`/api/alunos/${a.id}`, {
-        method: "PATCH", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ativo: !a.ativo }),
-      })
+      await fetch(`/api/alunos/${a.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ativo: !a.ativo }) })
       buscarAlunos()
-    } catch (err) { console.error("Erro ao atualizar status", err) }
+    } catch (err) { console.error(err) }
   }
 
   async function deletar(id: number) {
-    try {
-      await fetch(`/api/alunos/${id}`, { method: "DELETE" })
-      setConfirmandoId(null); buscarAlunos()
-    } catch (err) { console.error("Erro ao deletar", err) }
+    try { await fetch(`/api/alunos/${id}`, { method: "DELETE" }); setConfirmandoId(null); buscarAlunos() }
+    catch (err) { console.error(err) }
   }
 
   const campos = [
-    { key: "nome",     label: "Nome",     placeholder: "Nome completo",       icon: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" },
-    { key: "telefone", label: "Telefone", placeholder: "(11) 99999-9999",     icon: "M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.15 12 19.79 19.79 0 0 1 1.1 3.38 2 2 0 0 1 3.08 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16z" },
-    { key: "endereco", label: "Endereço", placeholder: "Rua, número, bairro", icon: "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0zM12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" },
+    { key: "nome",        label: "Nome",          placeholder: "Nome completo",          icon: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" },
+    { key: "blocoEstudo", label: "Bloco de Estudo", placeholder: "Ex: Evangelho, Doutrina", icon: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM9 12l2 2 4-4" },
+    { key: "telefone",    label: "Telefone",       placeholder: "(11) 99999-9999",        icon: "M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.15 12 19.79 19.79 0 0 1 1.1 3.38 2 2 0 0 1 3.08 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16z" },
+    { key: "endereco",    label: "Endereço",       placeholder: "Rua, número, bairro",    icon: "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0zM12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" },
   ] as const
 
   return (
@@ -222,7 +179,7 @@ export default function AlunosPage() {
 
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Buscar por nome, telefone ou código..." value={search}
+        <Input placeholder="Buscar por nome, bloco ou código..." value={search}
           onChange={(e) => setSearch(e.target.value)} className="pl-10" />
       </div>
 
@@ -243,6 +200,7 @@ export default function AlunosPage() {
                 <thead>
                   <tr className="border-b border-border">
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Nome</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground hidden md:table-cell">Bloco de Estudo</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground hidden md:table-cell">Telefone</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground hidden lg:table-cell">Endereço</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Status</th>
@@ -254,14 +212,14 @@ export default function AlunosPage() {
                   {alunos.map((a) => (
                     <tr key={a.id} className="border-b border-border last:border-0 transition-colors"
                       onMouseEnter={e => (e.currentTarget.style.background = "var(--secondary)")}
-                      onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                    >
+                      onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                       <td className="px-4 py-3 font-medium">{a.nome}</td>
+                      <td className="px-4 py-3 hidden md:table-cell">
+                        <Badge variant="secondary">{a.blocoEstudo}</Badge>
+                      </td>
                       <td className="px-4 py-3 hidden md:table-cell">{a.telefone}</td>
                       <td className="px-4 py-3 hidden lg:table-cell max-w-[200px] truncate text-muted-foreground">{a.endereco}</td>
-                      <td className="px-4 py-3">
-                        <Badge variant={a.ativo ? "default" : "outline"}>{a.ativo ? "Ativo" : "Inativo"}</Badge>
-                      </td>
+                      <td className="px-4 py-3"><Badge variant={a.ativo ? "default" : "outline"}>{a.ativo ? "Ativo" : "Inativo"}</Badge></td>
                       <td className="px-4 py-3 hidden sm:table-cell font-mono text-xs text-muted-foreground">{a.codigoBarras}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
@@ -272,17 +230,12 @@ export default function AlunosPage() {
                           {confirmandoId === a.id ? (
                             <div className="flex items-center gap-1">
                               <button onClick={() => deletar(a.id)} className="px-2.5 py-1 text-xs font-semibold rounded-md"
-                                style={{ background: "var(--destructive)", color: "#fff", border: "none", cursor: "pointer" }}>
-                                Confirmar
-                              </button>
+                                style={{ background: "var(--destructive)", color: "#fff", border: "none", cursor: "pointer" }}>Confirmar</button>
                               <button onClick={() => setConfirmandoId(null)} className="px-2.5 py-1 text-xs font-semibold rounded-md"
-                                style={{ background: "var(--muted)", color: "var(--muted-foreground)", border: "none", cursor: "pointer" }}>
-                                Cancelar
-                              </button>
+                                style={{ background: "var(--muted)", color: "var(--muted-foreground)", border: "none", cursor: "pointer" }}>Cancelar</button>
                             </div>
                           ) : (
-                            <Button variant="ghost" size="icon" style={{ color: "var(--destructive)" }}
-                              onClick={() => setConfirmandoId(a.id)}>
+                            <Button variant="ghost" size="icon" style={{ color: "var(--destructive)" }} onClick={() => setConfirmandoId(a.id)}>
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           )}
@@ -297,18 +250,14 @@ export default function AlunosPage() {
         </CardContent>
       </Card>
 
-      {/* Modal */}
       {modalAberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0"
-            style={{ background: "color-mix(in srgb, var(--sidebar-bg) 75%, transparent)" }}
-            onClick={fecharModal} />
+          <div className="absolute inset-0" style={{ background: "color-mix(in srgb, var(--sidebar-bg) 75%, transparent)" }} onClick={fecharModal} />
           <div className="relative z-10 w-full max-w-md flex flex-col" style={{
             maxHeight: "90vh",
             background: "color-mix(in srgb, var(--card) 92%, transparent)",
             backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
-            border: "1px solid var(--border)",
-            borderRadius: "calc(var(--radius) * 2)",
+            border: "1px solid var(--border)", borderRadius: "calc(var(--radius) * 2)",
             boxShadow: "0 24px 48px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.06) inset",
           }}>
             <div className="p-8 overflow-y-auto modal-scroll flex-1">
@@ -325,12 +274,9 @@ export default function AlunosPage() {
               <div className="flex flex-col gap-4">
                 {campos.map(({ key, label, placeholder, icon }) => (
                   <div key={key} className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
-                      {label}
-                    </label>
+                    <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>{label}</label>
                     <div className="relative">
-                      <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
-                        width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" strokeWidth="2">
+                      <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" strokeWidth="2">
                         <path d={icon} />
                       </svg>
                       <input type="text" placeholder={placeholder} value={form[key]}
@@ -342,16 +288,12 @@ export default function AlunosPage() {
                 ))}
               </div>
 
-              {/* Vínculos */}
               <div className="mt-6" style={{ borderTop: "1px solid var(--border)" }} />
               <div className="mt-5 flex flex-col gap-3">
                 <div className="flex items-center gap-2">
                   <Link2 className="h-4 w-4" style={{ color: "var(--primary)" }} />
-                  <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
-                    Vínculos (crachá único)
-                  </span>
+                  <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>Vínculos (crachá único)</span>
                 </div>
-
                 {vinculos.length > 0 && (
                   <div className="flex flex-col gap-2">
                     {vinculos.map((v) => (
@@ -369,10 +311,8 @@ export default function AlunosPage() {
                     ))}
                   </div>
                 )}
-
                 <div className="relative">
-                  <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
-                    width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" strokeWidth="2">
+                  <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" strokeWidth="2">
                     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
                   </svg>
                   <input ref={buscaRef} type="text" placeholder="Buscar pessoa para vincular..."
@@ -381,7 +321,6 @@ export default function AlunosPage() {
                     className="w-full pl-10 pr-4 py-3 text-sm outline-none"
                     style={{ background: "var(--background)", border: "1px solid var(--border)", color: "var(--foreground)", borderRadius: "var(--radius)" }} />
                   {buscandoVinculo && <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
-
                   {mostrarDropdown && resultadosBusca.length > 0 && (
                     <div ref={dropdownRef} className="absolute top-full left-0 right-0 z-10 mt-1 overflow-hidden"
                       style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: "var(--radius)", boxShadow: "0 8px 24px rgba(0,0,0,0.15)" }}>
@@ -416,15 +355,9 @@ export default function AlunosPage() {
                   style={{ background: "var(--muted)", color: "var(--muted-foreground)", border: "1px solid var(--border)", borderRadius: "var(--radius)", cursor: salvando ? "not-allowed" : "pointer" }}>
                   Cancelar
                 </button>
-                <button onClick={salvar} disabled={salvando}
-                  className="flex-1 py-3 text-sm font-semibold flex items-center justify-center gap-2"
+                <button onClick={salvar} disabled={salvando} className="flex-1 py-3 text-sm font-semibold flex items-center justify-center gap-2"
                   style={{ background: salvando ? "var(--muted)" : "var(--primary)", color: salvando ? "var(--muted-foreground)" : "var(--primary-foreground)", border: "none", borderRadius: "var(--radius)", cursor: salvando ? "not-allowed" : "pointer" }}>
-                  {salvando && (
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-                      style={{ animation: "spin 0.8s linear infinite" }}>
-                      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                    </svg>
-                  )}
+                  {salvando && <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ animation: "spin 0.8s linear infinite" }}><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>}
                   {editando ? "Salvar alterações" : "Criar aluno"}
                 </button>
               </div>
@@ -432,7 +365,6 @@ export default function AlunosPage() {
           </div>
         </div>
       )}
-
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         input::placeholder { color: var(--muted-foreground); opacity: 0.6; }

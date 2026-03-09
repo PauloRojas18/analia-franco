@@ -29,14 +29,12 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json()
-    const { nome, especialidade, telefone, endereco } = body
+    const { nome, telefone, endereco } = await req.json()
 
-    if (!nome || !especialidade || !telefone || !endereco) {
+    if (!nome || !telefone || !endereco) {
       return NextResponse.json({ error: "Todos os campos são obrigatórios" }, { status: 400 })
     }
 
-    // Gera próximo código de barras
     const ultimo = await db.paciente.findFirst({
       where: { codigoBarras: { startsWith: "CEFASP" } },
       orderBy: { codigoBarras: "desc" },
@@ -45,10 +43,9 @@ export async function POST(req: Request) {
     const proximoNum = ultimo
       ? String(parseInt(ultimo.codigoBarras.replace("CEFASP", "")) + 1).padStart(6, "0")
       : "000001"
-    const codigoBarras = `CEFASP${proximoNum}`
 
     const paciente = await db.paciente.create({
-      data: { nome, especialidade, telefone, endereco, codigoBarras },
+      data: { nome, telefone, endereco, codigoBarras: `CEFASP${proximoNum}` },
     })
 
     return NextResponse.json(paciente, { status: 201 })

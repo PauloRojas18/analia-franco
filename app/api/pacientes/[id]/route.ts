@@ -7,12 +7,11 @@ export const runtime = "nodejs"
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const body = await req.json()
-    const { nome, especialidade, telefone, endereco } = body
+    const { nome, telefone, endereco } = await req.json()
 
     const paciente = await db.paciente.update({
       where: { id: parseInt(id) },
-      data: { nome, especialidade, telefone, endereco },
+      data: { nome, telefone, endereco },
     })
 
     return NextResponse.json(paciente)
@@ -25,11 +24,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const body = await req.json()
+    const { ativo } = await req.json()
 
     const paciente = await db.paciente.update({
       where: { id: parseInt(id) },
-      data: { ativo: body.ativo },
+      data: { ativo },
     })
 
     return NextResponse.json(paciente)
@@ -42,8 +41,18 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
+    const paciente = await db.paciente.findUnique({ where: { id: parseInt(id) } })
+    if (!paciente) return NextResponse.json({ error: "Paciente não encontrado" }, { status: 404 })
 
     await db.presenca.deleteMany({ where: { pacienteId: parseInt(id) } })
+    await db.vinculoPessoa.deleteMany({
+      where: {
+        OR: [
+          { codigoBarras: paciente.codigoBarras },
+          { codigoSecund: paciente.codigoBarras },
+        ]
+      }
+    })
     await db.paciente.delete({ where: { id: parseInt(id) } })
 
     return NextResponse.json({ ok: true })
