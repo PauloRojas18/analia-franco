@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Search, Pencil, UserX, UserCheck, Trash2, Loader2, X, Link2, Unlink } from "lucide-react"
+import { Plus, Search, Pencil, UserX, UserCheck, Trash2, Loader2, X, Link2, Unlink,IdCard } from "lucide-react"
+import ModalCracha from "@/components/ModalCracha";
 
 interface Instrutor {
   id: number
@@ -35,6 +36,12 @@ interface ResultadoBusca {
   codigoBarras: string
 }
 
+interface CrachaInfo {
+  nome: string;
+  tipo: string;
+  codigoBarras: string;
+}
+
 const FORM_VAZIO: FormData = { nome: "", telefone: "", email: "" }
 
 const TIPO_LABEL: Record<string, string> = {
@@ -51,6 +58,7 @@ export default function InstrutoresPage() {
   const [form, setForm] = useState<FormData>(FORM_VAZIO)
   const [erroForm, setErroForm] = useState("")
   const [confirmandoId, setConfirmandoId] = useState<number | null>(null)
+  const [crachaAberto, setCrachaAberto] = useState<CrachaInfo | null>(null);
 
   // Vínculos
   const [vinculos, setVinculos] = useState<Vinculo[]>([])
@@ -270,8 +278,23 @@ export default function InstrutoresPage() {
                       <td className="px-4 py-3 hidden sm:table-cell font-mono text-xs text-muted-foreground">{i.codigoBarras}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => abrirEditar(i)}><Pencil className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => toggleAtivo(i)}>
+                          <Button
+                            variant="default"
+                            size="icon"
+                            title="Ver Crachá"
+                            style={{cursor:"pointer"}}
+                            onClick={() =>
+                              setCrachaAberto({
+                                nome: i.nome,
+                                tipo: "aluno",
+                                codigoBarras: i.codigoBarras,
+                              })
+                            }
+                          >
+                            <IdCard className="h-4 w-4" />
+                          </Button>                          
+                          <Button variant="outline" size="icon" style={{cursor:"pointer"}} onClick={() => abrirEditar(i)}><Pencil className="h-4 w-4" /></Button>
+                          <Button variant="outline" size="icon" style={{cursor:"pointer"}} onClick={() => toggleAtivo(i)}>
                             {i.ativo ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
                           </Button>
                           {confirmandoId === i.id ? (
@@ -286,7 +309,7 @@ export default function InstrutoresPage() {
                               </button>
                             </div>
                           ) : (
-                            <Button variant="ghost" size="icon" style={{ color: "var(--destructive)" }}
+                            <Button variant="outline" size="icon" style={{ color: "var(--destructive)", cursor:"pointer" }}
                               onClick={() => setConfirmandoId(i.id)}>
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -440,6 +463,15 @@ export default function InstrutoresPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {crachaAberto && (
+        <ModalCracha
+          nome={crachaAberto.nome}
+          tipo={crachaAberto.tipo}
+          codigoBarras={crachaAberto.codigoBarras}
+          onFechar={() => setCrachaAberto(null)}
+        />
       )}
 
       <style>{`

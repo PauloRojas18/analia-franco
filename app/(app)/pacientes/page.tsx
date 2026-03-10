@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Search, Pencil, UserX, UserCheck, Trash2, Loader2, X, Link2, Unlink } from "lucide-react"
+import { Plus, Search, Pencil, UserX, UserCheck, Trash2, Loader2, X, Link2, Unlink, IdCard } from "lucide-react"
+import ModalCracha from "@/components/ModalCracha"
 
 interface Paciente {
   id: number
@@ -23,6 +24,7 @@ interface FormData {
   endereco: string
 }
 
+interface CrachaInfo { nome: string; tipo: string; codigoBarras: string }
 interface Vinculo { tipo: string; nome: string; codigoBarras: string }
 interface ResultadoBusca { tipo: string; nome: string; codigoBarras: string }
 
@@ -46,19 +48,20 @@ export default function PacientesPage() {
   const [resultadosBusca, setResultadosBusca] = useState<ResultadoBusca[]>([])
   const [buscandoVinculo, setBuscandoVinculo] = useState(false)
   const [mostrarDropdown, setMostrarDropdown] = useState(false)
+  const [crachaAberto, setCrachaAberto] = useState<CrachaInfo | null>(null)
   const buscaRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   const buscarPacientes = useCallback(async () => {
-  setLoading(true)
-  try {
-    const res = await fetch(`/api/pacientes?search=${encodeURIComponent(search)}`)
-    const data = await res.json()
-    setPacientes(Array.isArray(data) ? data : [])
-    if (!Array.isArray(data)) console.error("Erro da API:", data)
-  } catch (err) { console.error("Erro ao buscar pacientes", err) }
-  finally { setLoading(false) }
-}, [search])
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/pacientes?search=${encodeURIComponent(search)}`)
+      const data = await res.json()
+      setPacientes(Array.isArray(data) ? data : [])
+      if (!Array.isArray(data)) console.error("Erro da API:", data)
+    } catch (err) { console.error("Erro ao buscar pacientes", err) }
+    finally { setLoading(false) }
+  }, [search])
 
   useEffect(() => { const t = setTimeout(buscarPacientes, 300); return () => clearTimeout(t) }, [buscarPacientes])
 
@@ -202,7 +205,7 @@ export default function PacientesPage() {
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground hidden md:table-cell">Telefone</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground hidden lg:table-cell">Endereço</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground hidden sm:table-cell">Crachá</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Código de Barras</th>                    
                     <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Ações</th>
                   </tr>
                 </thead>
@@ -214,23 +217,35 @@ export default function PacientesPage() {
                       <td className="px-4 py-3 font-medium">{p.nome}</td>
                       <td className="px-4 py-3 hidden md:table-cell">{p.telefone}</td>
                       <td className="px-4 py-3 hidden lg:table-cell max-w-[200px] truncate text-muted-foreground">{p.endereco}</td>
-                      <td className="px-4 py-3"><Badge variant={p.ativo ? "default" : "outline"}>{p.ativo ? "Ativo" : "Inativo"}</Badge></td>
+                      <td className="px-4 py-3">
+                        <Badge variant={p.ativo ? "default" : "outline"}>{p.ativo ? "Ativo" : "Inativo"}</Badge>
+                      </td>
                       <td className="px-4 py-3 hidden sm:table-cell font-mono text-xs text-muted-foreground">{p.codigoBarras}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => abrirEditar(p)}><Pencil className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => toggleAtivo(p)}>
+                          <Button variant="default" size="icon" title="Ver Crachá"
+                            style={{cursor:"pointer"}} onClick={() => setCrachaAberto({ nome: p.nome, tipo: "paciente", codigoBarras: p.codigoBarras })}>
+                            <IdCard className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="icon" style={{cursor:"pointer"}} onClick={() => abrirEditar(p)}><Pencil className="h-4 w-4" /></Button>
+                          <Button variant="outline" size="icon" style={{cursor:"pointer"}} onClick={() => toggleAtivo(p)}>
                             {p.ativo ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
                           </Button>
                           {confirmandoId === p.id ? (
                             <div className="flex items-center gap-1">
-                              <button onClick={() => deletar(p.id)} className="px-2.5 py-1 text-xs font-semibold rounded-md"
-                                style={{ background: "var(--destructive)", color: "#fff", border: "none", cursor: "pointer" }}>Confirmar</button>
-                              <button onClick={() => setConfirmandoId(null)} className="px-2.5 py-1 text-xs font-semibold rounded-md"
-                                style={{ background: "var(--muted)", color: "var(--muted-foreground)", border: "none", cursor: "pointer" }}>Cancelar</button>
+                              <button onClick={() => deletar(p.id)}
+                                className="h-8 px-3 text-xs font-semibold rounded-md"
+                                style={{ background: "var(--destructive)", color: "#fff", border: "none", cursor: "pointer" }}>
+                                Confirmar
+                              </button>
+                              <button onClick={() => setConfirmandoId(null)}
+                                className="h-8 px-3 text-xs font-semibold rounded-md"
+                                style={{ background: "var(--muted)", color: "var(--muted-foreground)", border: "1px solid var(--border)", cursor: "pointer" }}>
+                                Cancelar
+                              </button>
                             </div>
                           ) : (
-                            <Button variant="ghost" size="icon" style={{ color: "var(--destructive)" }} onClick={() => setConfirmandoId(p.id)}>
+                            <Button variant="outline" size="icon" style={{ color: "var(--destructive)", cursor:"pointer" }} onClick={() => setConfirmandoId(p.id)}>
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           )}
@@ -360,6 +375,16 @@ export default function PacientesPage() {
           </div>
         </div>
       )}
+
+      {crachaAberto && (
+        <ModalCracha
+          nome={crachaAberto.nome}
+          tipo={crachaAberto.tipo}
+          codigoBarras={crachaAberto.codigoBarras}
+          onFechar={() => setCrachaAberto(null)}
+        />
+      )}
+
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         input::placeholder { color: var(--muted-foreground); opacity: 0.6; }

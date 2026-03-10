@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Search, Pencil, UserX, UserCheck, Trash2, Loader2, X, Link2, Unlink } from "lucide-react"
+import { Plus, Search, Pencil, UserX, UserCheck, Trash2, Loader2, X, Link2, Unlink,IdCard } from "lucide-react"
+import ModalCracha from "@/components/ModalCracha";
 
 interface Trabalhador {
   id: number
@@ -35,6 +36,12 @@ interface ResultadoBusca {
   codigoBarras: string
 }
 
+interface CrachaInfo {
+  nome: string;
+  tipo: string;
+  codigoBarras: string;
+}
+
 const FORM_VAZIO: FormData = { nome: "", telefone: "", email: "" }
 
 const TIPO_LABEL: Record<string, string> = {
@@ -51,6 +58,7 @@ export default function TrabalhadoresPage() {
   const [form, setForm] = useState<FormData>(FORM_VAZIO)
   const [erroForm, setErroForm] = useState("")
   const [confirmandoId, setConfirmandoId] = useState<number | null>(null)
+  const [crachaAberto, setCrachaAberto] = useState<CrachaInfo | null>(null);
 
   const [vinculos, setVinculos] = useState<Vinculo[]>([])
   const [buscaVinculo, setBuscaVinculo] = useState("")
@@ -265,23 +273,38 @@ export default function TrabalhadoresPage() {
                       <td className="px-4 py-3 hidden sm:table-cell font-mono text-xs text-muted-foreground">{t.codigoBarras}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => abrirEditar(t)}><Pencil className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => toggleAtivo(t)}>
+                          <Button
+                            variant="default"
+                            size="icon"
+                            title="Ver Crachá"
+                            style={{cursor:"pointer"}}
+                            onClick={() =>
+                              setCrachaAberto({
+                                nome: t.nome,
+                                tipo: "aluno",
+                                codigoBarras: t.codigoBarras,
+                              })
+                            }
+                          >
+                            <IdCard className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="icon" style={{cursor:"pointer"}} onClick={() => abrirEditar(t)}><Pencil className="h-4 w-4" /></Button>
+                          <Button variant="outline" size="icon" style={{cursor:"pointer"}} onClick={() => toggleAtivo(t)}>
                             {t.ativo ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
                           </Button>
                           {confirmandoId === t.id ? (
                             <div className="flex items-center gap-1">
-                              <button onClick={() => deletar(t.id)} className="px-2.5 py-1 text-xs font-semibold rounded-md"
+                              <button onClick={() => deletar(t.id)} className="h-8 px-3 text-xs font-semibold rounded-md"
                                 style={{ background: "var(--destructive)", color: "#fff", border: "none", cursor: "pointer" }}>
                                 Confirmar
                               </button>
-                              <button onClick={() => setConfirmandoId(null)} className="px-2.5 py-1 text-xs font-semibold rounded-md"
-                                style={{ background: "var(--muted)", color: "var(--muted-foreground)", border: "none", cursor: "pointer" }}>
+                              <button onClick={() => setConfirmandoId(null)} className="h-8 px-3 text-xs font-semibold rounded-md"
+                                style={{ background: "var(--destructive)", color: "#fff", border: "none", cursor: "pointer" }}>
                                 Cancelar
                               </button>
                             </div>
                           ) : (
-                            <Button variant="ghost" size="icon" style={{ color: "var(--destructive)" }}
+                            <Button variant="outline" size="icon" style={{ color: "var(--destructive)", cursor:"pointer" }}
                               onClick={() => setConfirmandoId(t.id)}>
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -431,6 +454,15 @@ export default function TrabalhadoresPage() {
             </div>
           </div>
         </div>
+      )}
+      
+      {crachaAberto && (
+        <ModalCracha
+          nome={crachaAberto.nome}
+          tipo={crachaAberto.tipo}
+          codigoBarras={crachaAberto.codigoBarras}
+          onFechar={() => setCrachaAberto(null)}
+        />
       )}
 
       <style>{`
