@@ -281,7 +281,7 @@ export default function TrabalhadoresPage() {
                             onClick={() =>
                               setCrachaAberto({
                                 nome: t.nome,
-                                tipo: "aluno",
+                                tipo: "trabalhador",
                                 codigoBarras: t.codigoBarras,
                               })
                             }

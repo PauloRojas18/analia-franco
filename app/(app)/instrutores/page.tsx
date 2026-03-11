@@ -286,7 +286,7 @@ export default function InstrutoresPage() {
                             onClick={() =>
                               setCrachaAberto({
                                 nome: i.nome,
-                                tipo: "aluno",
+                                tipo: "instrutor",
                                 codigoBarras: i.codigoBarras,
                               })
                             }
