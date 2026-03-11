@@ -22,6 +22,8 @@ model Paciente {
   codigoBarras String    @unique
   createdAt    DateTime  @default(now())
   presencas    Presenca[]
+  observacoes Observacao[]
+
 }
 
 model Instrutor {
@@ -85,6 +87,15 @@ model VinculoPessoa {
   codigoSecund   String     // código do vínculo secundário
   tipoSecund     TipoPessoa
   @@unique([codigoBarras, tipoSecund])
+}
+
+model Observacao {
+  id         Int      @id @default(autoincrement())
+  pacienteId Int
+  numero     Int      // 1, 2, 3 ou 4
+  descricao  String
+  data       DateTime @default(now())
+  paciente   Paciente @relation(fields: [pacienteId], references: [id])
 }
 
 enum TipoPessoa {
