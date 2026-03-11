@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Download, Printer, FileText, Users, GraduationCap, Calendar, Loader2, Briefcase, BookOpen } from "lucide-react"
+import { Download, Printer, FileText, Users, GraduationCap, Calendar, Loader2, Briefcase, BookOpen, Search } from "lucide-react"
 import JsBarcode from "jsbarcode"
 
 type TabType = "todos" | "paciente" | "aluno" | "instrutor" | "trabalhador"
@@ -57,8 +57,9 @@ function gerarBarrasSVG(codigo: string): string {
 export default function RelatoriosPage() {
   const [presencas, setPresencas] = useState<Presenca[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedDate, setSelectedDate] = useState(hoje())
+const [selectedDate, setSelectedDate] = useState(hoje())
   const [activeTab, setActiveTab] = useState<TabType>("todos")
+  const [search, setSearch] = useState("")
 
   const buscar = useCallback(async () => {
     setLoading(true)
@@ -74,9 +75,16 @@ export default function RelatoriosPage() {
 
   const contagem = (tipo: string) => presencas.filter(p => p.tipo === tipo).length
 
-  const filtradas = activeTab === "todos"
+const filtradasPorTipo = activeTab === "todos"
     ? presencas
     : presencas.filter(p => p.tipo === activeTab)
+
+  const filtradas = search.trim()
+    ? filtradasPorTipo.filter(p =>
+        p.pessoaNome.toLowerCase().includes(search.toLowerCase()) ||
+        p.codigoBarras.toLowerCase().includes(search.toLowerCase())
+      )
+    : filtradasPorTipo
 
   function exportarCSV() {
     const linhas = [
@@ -320,17 +328,29 @@ export default function RelatoriosPage() {
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+<div className="flex items-center gap-4">
         <div className="flex flex-col gap-2">
           <label htmlFor="relDate" className="flex items-center gap-2 text-sm font-medium">
             <Calendar className="h-4 w-4" />Data do Relatório
           </label>
-          <Input id="relDate" type="date" value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)} className="w-[200px]" />
+          <div className="flex items-center gap-3">
+            <Input id="relDate" type="date" value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)} className="w-[200px]" />
+          </div>
         </div>
         <p className="self-end pb-1 text-sm text-muted-foreground">
           {loading ? "Carregando..." : `${presencas.length} presença(s) encontrada(s)`}
         </p>
+      </div>
+
+<div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Buscar por nome ou código..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-10"
+        />
       </div>
 
       <div className="flex gap-1 overflow-x-auto border-b border-border">
@@ -377,7 +397,11 @@ export default function RelatoriosPage() {
                       <td className="px-4 py-3">
                         <Badge variant={BADGE_VARIANT[p.tipo] ?? "outline"}>{p.tipoLabel}</Badge>
                       </td>
-                      <td className="px-4 py-3">{p.data}</td>
+                      <td className="px-4 py-3">{p.data} - 
+                        <span className="text-sm font-medium text-foreground capitalize">
+                          {new Date(selectedDate + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long" })}
+                        </span>                        
+                      </td>
                       <td className="px-4 py-3 font-mono text-sm">{p.horario}</td>
                       <td className="px-4 py-3 font-mono text-xs text-muted-foreground hidden md:table-cell">{p.codigoBarras}</td>
                     </tr>

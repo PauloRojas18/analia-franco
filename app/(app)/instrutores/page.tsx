@@ -299,12 +299,12 @@ export default function InstrutoresPage() {
                           </Button>
                           {confirmandoId === i.id ? (
                             <div className="flex items-center gap-1">
-                              <button onClick={() => deletar(i.id)} className="px-2.5 py-1 text-xs font-semibold rounded-md"
+                              <button onClick={() => deletar(i.id)} className="h-8 px-3 text-xs font-semibold rounded-md"
                                 style={{ background: "var(--destructive)", color: "#fff", border: "none", cursor: "pointer" }}>
                                 Confirmar
                               </button>
-                              <button onClick={() => setConfirmandoId(null)} className="px-2.5 py-1 text-xs font-semibold rounded-md"
-                                style={{ background: "var(--muted)", color: "var(--muted-foreground)", border: "none", cursor: "pointer" }}>
+                              <button onClick={() => setConfirmandoId(null)} className="h-8 px-3 text-xs font-semibold rounded-md"
+                                style={{ background: "var(--muted)", color: "var(--muted-foreground)", border: "1px solid var(--border)", borderRadius: "var(--radius)", cursor: salvando ? "not-allowed" : "pointer" }}>
                                 Cancelar
                               </button>
                             </div>
