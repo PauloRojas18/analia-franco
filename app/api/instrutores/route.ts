@@ -37,14 +37,14 @@ export async function POST(req: Request) {
     }
 
     const ultimo = await db.instrutor.findFirst({
-      where: { codigoBarras: { startsWith: "CEFASI" } },
+      where: { codigoBarras: { startsWith: "CEFAFI" } },
       orderBy: { codigoBarras: "desc" },
     })
 
     const proximoNum = ultimo
-      ? String(parseInt(ultimo.codigoBarras.replace("CEFASI", "")) + 1).padStart(6, "0")
+      ? String(parseInt(ultimo.codigoBarras.replace("CEFAFI", "")) + 1).padStart(6, "0")
       : "000001"
-    const codigoBarras = `CEFASI${proximoNum}`
+    const codigoBarras = `CEFAFI${proximoNum}`
 
     const instrutor = await db.instrutor.create({
       data: { nome, telefone, email, codigoBarras },

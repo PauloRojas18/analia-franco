@@ -45,13 +45,13 @@ export async function POST(req: Request) {
     }
 
     const ultimo = await db.aluno.findFirst({
-      where: { codigoBarras: { startsWith: "CEFASA" } },
+      where: { codigoBarras: { startsWith: "CEFAFA" } },
       orderBy: { codigoBarras: "desc" },
     });
 
     const proximoNum = ultimo
       ? String(
-          parseInt(ultimo.codigoBarras.replace("CEFASA", "")) + 1,
+          parseInt(ultimo.codigoBarras.replace("CEFAFA", "")) + 1,
         ).padStart(6, "0")
       : "000001";
 
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
         blocoEstudo,
         telefone,
         endereco,
-        codigoBarras: `CEFASA${proximoNum}`,
+        codigoBarras: `CEFAFA${proximoNum}`,
       },
     });
 

@@ -36,16 +36,16 @@ export async function POST(req: Request) {
     }
 
     const ultimo = await db.paciente.findFirst({
-      where: { codigoBarras: { startsWith: "CEFASP" } },
+      where: { codigoBarras: { startsWith: "CEFAFP" } },
       orderBy: { codigoBarras: "desc" },
     })
 
     const proximoNum = ultimo
-      ? String(parseInt(ultimo.codigoBarras.replace("CEFASP", "")) + 1).padStart(6, "0")
+      ? String(parseInt(ultimo.codigoBarras.replace("CEFAFP", "")) + 1).padStart(6, "0")
       : "000001"
 
     const paciente = await db.paciente.create({
-      data: { nome, telefone, endereco, codigoBarras: `CEFASP${proximoNum}` },
+      data: { nome, telefone, endereco, codigoBarras: `CEFAFP${proximoNum}` },
     })
 
     return NextResponse.json(paciente, { status: 201 })
