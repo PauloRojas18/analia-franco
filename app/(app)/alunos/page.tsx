@@ -52,6 +52,7 @@ interface CrachaInfo {
   nome: string;
   tipo: string;
   codigoBarras: string;
+  subtitulo?: string
 }
 
 const FORM_VAZIO: FormData = {
@@ -453,6 +454,7 @@ export default function AlunosPage() {
                                 nome: a.nome,
                                 tipo: "aluno",
                                 codigoBarras: a.codigoBarras,
+                                subtitulo: a.blocoEstudo,
                               })
                             }
                           >
@@ -822,12 +824,12 @@ export default function AlunosPage() {
         </div>
       )}
 
-      {/* Modal Crachá */}
       {crachaAberto && (
         <ModalCracha
           nome={crachaAberto.nome}
           tipo={crachaAberto.tipo}
           codigoBarras={crachaAberto.codigoBarras}
+          subtitulo={crachaAberto.subtitulo}
           onFechar={() => setCrachaAberto(null)}
         />
       )}

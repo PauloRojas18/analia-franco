@@ -8,6 +8,7 @@ interface Props {
   nome: string
   tipo: string
   codigoBarras: string
+  subtitulo?: string   // ← campo extra: ex. bloco de estudo ou "Tratamento Espiritual"
   onFechar: () => void
 }
 
@@ -18,12 +19,14 @@ const TIPO_COR: Record<string, { bg: string; accent: string; label: string }> = 
   trabalhador: { bg: "#1a9e7a", accent: "#1e6b94", label: "Trabalhador"  },
 }
 
-export default function ModalCracha({ nome, tipo, codigoBarras, onFechar }: Props) {
+export default function ModalCracha({ nome, tipo, codigoBarras, subtitulo, onFechar }: Props) {
   const cor = TIPO_COR[tipo] ?? { bg: "#333", accent: "#666", label: tipo }
   const iniciais = nome.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase()
   const [barcodeSVG, setBarcodeSVG] = useState<string>("")
 
-  // Gera o SVG do barcode fora do DOM real, igual ao relatório
+  // Texto exibido no topo do header (dentro do crachá)
+  const orgNome = subtitulo ?? "Obras Sociais Anália Franco"
+
   useEffect(() => {
     import("jsbarcode").then(({ default: JsBarcode }) => {
       try {
@@ -49,7 +52,7 @@ export default function ModalCracha({ nome, tipo, codigoBarras, onFechar }: Prop
   <meta charset="UTF-8">
   <title>Crachá — ${nome}</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
     body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 24px; }
     .cracha { width: 260px; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.15); background: #fff; }
     .cracha-header { padding: 20px 16px 16px; text-align: center; background: linear-gradient(135deg, ${cor.bg} 0%, ${cor.accent} 100%); }
@@ -64,13 +67,13 @@ export default function ModalCracha({ nome, tipo, codigoBarras, onFechar }: Prop
     .codigo { font-family: 'Courier New', monospace; font-size: 10px; color: #888; letter-spacing: 1px; }
     .cracha-footer { padding: 8px 12px; text-align: center; background: ${cor.bg}18; border-top: 2px solid ${cor.bg}25; }
     .footer-text { font-size: 8px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: ${cor.bg}; opacity: 0.8; }
-    @media print { body { background: white; } .cracha { box-shadow: 0 0 0 1px #ddd; } }
+    @media print { * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } body { background: white; } .cracha { box-shadow: 0 0 0 1px #ddd; } }
   </style>
 </head>
 <body>
   <div class="cracha">
     <div class="cracha-header">
-      <div class="org-nome">Obras Sociais Anália Franco</div>
+      <div class="org-nome">${orgNome}</div>
       <div class="avatar">${iniciais}</div>
       <div class="tipo-badge">${cor.label.toUpperCase()}</div>
     </div>
@@ -124,7 +127,7 @@ export default function ModalCracha({ nome, tipo, codigoBarras, onFechar }: Prop
           padding: "28px 24px 20px", textAlign: "center",
         }}>
           <p style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.8)", letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>
-            Obras Sociais Anália Franco
+            {orgNome}
           </p>
           <div style={{
             width: 64, height: 64, borderRadius: "50%",
@@ -147,7 +150,6 @@ export default function ModalCracha({ nome, tipo, codigoBarras, onFechar }: Prop
           </p>
           <div style={{ height: 1, background: "var(--border)", marginBottom: 16 }} />
 
-          {/* Barcode via dangerouslySetInnerHTML — SVG gerado fora do DOM real */}
           <div
             style={{ display: "flex", justifyContent: "center", marginBottom: 8, opacity: 0.85, minHeight: 48 }}
             dangerouslySetInnerHTML={{ __html: barcodeSVG || "" }}

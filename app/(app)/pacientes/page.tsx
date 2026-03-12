@@ -496,6 +496,7 @@ export default function PacientesPage() {
           nome={crachaAberto.nome}
           tipo={crachaAberto.tipo}
           codigoBarras={crachaAberto.codigoBarras}
+          subtitulo="Tratamento Espiritual"
           onFechar={() => setCrachaAberto(null)}
         />
       )}
