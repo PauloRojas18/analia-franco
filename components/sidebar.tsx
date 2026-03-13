@@ -12,7 +12,7 @@ const navItems = [
   { href: "/pacientes", label: "Pacientes", icon: HeartPulse, page: "pacientes" },
   { href: "/alunos", label: "Alunos", icon: Users, page: "alunos" },
   { href: "/instrutores", label: "Instrutores", icon: GraduationCap, page: "instrutores" },
-  { href: "/trabalhadores", label: "Trabalhadores", icon: Briefcase, page: "trabalhadores" },
+  { href: "/trabalhadores", label: "Voluntários", icon: Briefcase, page: "trabalhadores" },
   { href: "/presenca", label: "Registrar Presenca", icon: ScanBarcode, page: "presenca" },
   { href: "/relatorios", label: "Relatorios", icon: FileText, page: "relatorios" },
 ]

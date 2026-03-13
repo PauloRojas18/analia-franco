@@ -16,7 +16,7 @@ const TIPO_COR: Record<string, { bg: string; accent: string; label: string }> = 
   paciente:    { bg: "#1e6b94", accent: "#1a9e7a", label: "Paciente"     },
   aluno:       { bg: "#6d28d9", accent: "#a78bfa", label: "Aluno"        },
   instrutor:   { bg: "#b45309", accent: "#fbbf24", label: "Instrutor"    },
-  trabalhador: { bg: "#1a9e7a", accent: "#1e6b94", label: "Trabalhador"  },
+  trabalhador: { bg: "#ea580c", accent: "#fdba74", label: "Voluntário" },
 }
 
 export default function ModalCracha({ nome, tipo, codigoBarras, subtitulo, onFechar }: Props) {

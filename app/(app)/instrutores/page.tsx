@@ -431,14 +431,14 @@ export default function InstrutoresPage() {
                   )}
                 </div>
                 <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
-                  Instrutores só podem ser vinculados a trabalhadores.
+                  Instrutores só podem ser vinculados a Voluntários.
                 </p>
               </div>
 
               {erroForm && <p className="mt-4 text-sm" style={{ color: "var(--destructive)" }}>{erroForm}</p>}
               {!editando && (
                 <p className="mt-3 text-xs" style={{ color: "var(--muted-foreground)" }}>
-                  Código gerado automaticamente com prefixo <span className="font-mono font-semibold">CEFASI</span>.
+                  Código gerado automaticamente com prefixo <span className="font-mono font-semibold">CEFAFI</span>.
                 </p>
               )}
 

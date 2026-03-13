@@ -766,7 +766,7 @@ export default function AlunosPage() {
                   style={{ color: "var(--muted-foreground)" }}
                 >
                   Código gerado automaticamente com prefixo{" "}
-                  <span className="font-mono font-semibold">CEFASA</span>.
+                  <span className="font-mono font-semibold">CEFAFA</span>.
                 </p>
               )}
 

@@ -222,10 +222,10 @@ export default function TrabalhadoresPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Trabalhadores</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Gerencie o cadastro de trabalhadores e voluntários</p>
+          <h1 className="text-2xl font-bold text-foreground">voluntários</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Gerencie o cadastro de voluntários</p>
         </div>
-        <Button onClick={abrirNovo}><Plus className="mr-2 h-4 w-4" />Novo Trabalhador</Button>
+        <Button onClick={abrirNovo}><Plus className="mr-2 h-4 w-4" />Novo Voluntário</Button>
       </div>
 
       <div className="relative max-w-md">
@@ -237,14 +237,14 @@ export default function TrabalhadoresPage() {
       <Card className="shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold">
-            {loading ? "Carregando..." : `${trabalhadores.length} trabalhador(es) encontrado(s)`}
+            {loading ? "Carregando..." : `${trabalhadores.length} voluntário(s) encontrado(s)`}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
           ) : trabalhadores.length === 0 ? (
-            <p className="py-10 text-center text-sm text-muted-foreground">Nenhum trabalhador encontrado.</p>
+            <p className="py-10 text-center text-sm text-muted-foreground">Nenhum voluntário encontrado.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -337,7 +337,7 @@ export default function TrabalhadoresPage() {
             <div className="p-8 overflow-y-auto modal-scroll flex-1">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold" style={{ color: "var(--primary)", letterSpacing: "-0.3px" }}>
-                  {editando ? "Editar Trabalhador" : "Novo Trabalhador"}
+                  {editando ? "Editar Voluntário" : "Novo Voluntário"}
                 </h2>
                 <button onClick={fecharModal} className="flex h-8 w-8 items-center justify-center rounded-md"
                   style={{ background: "var(--muted)", color: "var(--muted-foreground)", border: "none", cursor: "pointer" }}>
@@ -422,14 +422,14 @@ export default function TrabalhadoresPage() {
                   )}
                 </div>
                 <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
-                  Trabalhadores podem ser vinculados a qualquer categoria.
+                  Voluntários podem ser vinculados a qualquer categoria.
                 </p>
               </div>
 
               {erroForm && <p className="mt-4 text-sm" style={{ color: "var(--destructive)" }}>{erroForm}</p>}
               {!editando && (
                 <p className="mt-3 text-xs" style={{ color: "var(--muted-foreground)" }}>
-                  Código gerado automaticamente com prefixo <span className="font-mono font-semibold">CEFAST</span>.
+                  Código gerado automaticamente com prefixo <span className="font-mono font-semibold">CEFAFT</span>.
                 </p>
               )}
 
@@ -448,7 +448,7 @@ export default function TrabalhadoresPage() {
                       <path d="M21 12a9 9 0 1 1-6.219-8.56" />
                     </svg>
                   )}
-                  {editando ? "Salvar alterações" : "Criar trabalhador"}
+                  {editando ? "Salvar alterações" : "Criar voluntário"}
                 </button>
               </div>
             </div>

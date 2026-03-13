@@ -33,7 +33,7 @@ const TIPO_COR: Record<string, { bg: string; accent: string; label: string }> = 
   paciente:    { bg: "#1e6b94", accent: "#1a9e7a", label: "Paciente"     },
   aluno:       { bg: "#6d28d9", accent: "#a78bfa", label: "Aluno"        },
   instrutor:   { bg: "#b45309", accent: "#fbbf24", label: "Instrutor"    },
-  trabalhador: { bg: "#1a9e7a", accent: "#1e6b94", label: "Trabalhador"  },
+  trabalhador: { bg: "#ea580c", accent: "#fdba74", label: "Trabalhador" },
 }
 
 function hoje(): string {
@@ -102,201 +102,175 @@ const filtradasPorTipo = activeTab === "todos"
   }
 
   function imprimirCrachas() {
-    const dataFormatada = new Date(selectedDate + "T12:00:00").toLocaleDateString("pt-BR", {
-      day: "2-digit", month: "long", year: "numeric"
-    })
+  const dataFormatada = new Date(selectedDate + "T12:00:00").toLocaleDateString("pt-BR", {
+    day: "2-digit", month: "long", year: "numeric"
+  })
 
-    const cartoes = filtradas.map((p) => {
-      const cor = TIPO_COR[p.tipo] ?? { bg: "#333", accent: "#666", label: p.tipoLabel }
-      const barrasSVG = gerarBarrasSVG(p.codigoBarras)
-      const iniciais = p.pessoaNome.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase()
+  const cartoes = filtradas.map((p) => {
+    const cor = TIPO_COR[p.tipo] ?? { bg: "#333", accent: "#666", label: p.tipoLabel }
+    const barrasSVG = gerarBarrasSVG(p.codigoBarras)
+    const iniciais = p.pessoaNome.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase()
 
-      return `
-      <div class="cracha">
-        <div class="cracha-header" style="background: linear-gradient(135deg, ${cor.bg} 0%, ${cor.accent} 100%);">
-          <div class="org-nome">Obras Sociais Anália Franco</div>
-          <div class="avatar">${iniciais}</div>
-          <div class="tipo-badge" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);">
-            ${cor.label.toUpperCase()}
-          </div>
-        </div>
-        <div class="cracha-body">
-          <div class="nome">${p.pessoaNome}</div>
-          <div class="divider"></div>
-          <div class="barras" style="color: ${cor.bg}">
-            ${barrasSVG}
-          </div>
-          <div class="codigo">${p.codigoBarras}</div>
-        </div>
-        <div class="cracha-footer" style="background: ${cor.bg}10; border-top: 2px solid ${cor.bg}20;">
-          <div class="footer-text" style="color: ${cor.bg}">Centro Espírita Fraternidade Anália Franco</div>
-        </div>
-      </div>`
+    return `
+    <div class="cracha">
+      <div class="cracha-header" style="background: linear-gradient(135deg, ${cor.bg} 0%, ${cor.accent} 100%);">
+        <div class="org-nome">Obras Sociais Anália Franco</div>
+        <div class="avatar">${iniciais}</div>
+        <div class="tipo-badge">${cor.label.toUpperCase()}</div>
+      </div>
+      <div class="cracha-body">
+        <div class="nome">${p.pessoaNome}</div>
+        <div class="divider"></div>
+        <div class="barras">${barrasSVG}</div>
+        <div class="codigo">${p.codigoBarras}</div>
+      </div>
+      <div class="cracha-footer" style="background: ${cor.bg}18; border-top: 2px solid ${cor.bg}25;">
+        <div class="footer-text" style="color: ${cor.bg}">Centro Espírita Fraternidade Anália Franco</div>
+      </div>
+    </div>`
     }).join("")
 
     const html = `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <title>Crachás — ${dataFormatada}</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+  <html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8">
+    <title>Crachás — ${dataFormatada}</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: #f0f2f5;
-      padding: 24px;
-    }
-
-    h1.titulo {
-      text-align: center;
-      font-size: 16px;
-      color: #444;
-      margin-bottom: 24px;
-      font-weight: 400;
-      letter-spacing: 0.5px;
-    }
-
-    .grade {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      justify-content: center;
-    }
-
-    .cracha {
-      width: 240px;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.15), 0 1px 4px rgba(0,0,0,0.1);
-      background: #fff;
-      break-inside: avoid;
-      page-break-inside: avoid;
-    }
-
-    .cracha-header {
-      padding: 20px 16px 16px;
-      text-align: center;
-      position: relative;
-    }
-
-    .org-nome {
-      font-size: 9px;
-      font-weight: 700;
-      color: rgba(255,255,255,0.85);
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      margin-bottom: 12px;
-    }
-
-    .avatar {
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.25);
-      border: 2px solid rgba(255,255,255,0.5);
-      color: #fff;
-      font-size: 20px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 10px;
-    }
-
-    .tipo-badge {
-      display: inline-block;
-      font-size: 9px;
-      font-weight: 700;
-      color: #fff;
-      padding: 3px 10px;
-      border-radius: 20px;
-      letter-spacing: 1.5px;
-    }
-
-    .cracha-body {
-      padding: 16px;
-      text-align: center;
-    }
-
-    .nome {
-      font-size: 14px;
-      font-weight: 700;
-      color: #1a1a2e;
-      line-height: 1.3;
-      margin-bottom: 8px;
-    }
-
-    .data-label {
-      font-size: 9px;
-      color: #999;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      margin-bottom: 2px;
-    }
-
-    .data-valor {
-      font-size: 11px;
-      color: #555;
-      font-weight: 600;
-      margin-bottom: 12px;
-    }
-
-    .divider {
-      height: 1px;
-      background: #eee;
-      margin: 12px 0;
-    }
-
-    .barras {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 6px;
-      opacity: 0.85;
-    }
-
-    .barras svg {
-      max-width: 100%;
-      height: 32px;
-    }
-
-    .codigo {
-      font-family: 'Courier New', monospace;
-      font-size: 10px;
-      color: #888;
-      letter-spacing: 1px;
-    }
-
-    .cracha-footer {
-      padding: 8px 12px;
-      text-align: center;
-    }
-
-    .footer-text {
-      font-size: 8px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      opacity: 0.7;
-    }
-
-    @media print {
-      body { background: white; padding: 10px; }
-      h1.titulo { margin-bottom: 16px; }
-      .cracha {
-        box-shadow: 0 0 0 1px #ddd;
+      body {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        background: #f0f2f5;
+        padding: 24px;
       }
-    }
-  </style>
-</head>
-<body>
-  <h1 class="titulo">Crachás de Presença &mdash; ${dataFormatada} &mdash; ${filtradas.length} pessoa(s)</h1>
-  <div class="grade">
-    ${cartoes}
-  </div>
-  <script>window.onload = () => { setTimeout(() => window.print(), 300) }</script>
-</body>
-</html>`
+
+      h1.titulo {
+        text-align: center;
+        font-size: 16px;
+        color: #444;
+        margin-bottom: 24px;
+        font-weight: 400;
+        letter-spacing: 0.5px;
+      }
+
+      .grade {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: center;
+      }
+
+      .cracha {
+        width: 240px;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15), 0 1px 4px rgba(0,0,0,0.1);
+        background: #fff;
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      .cracha-header {
+        padding: 20px 16px 16px;
+        text-align: center;
+      }
+
+      .org-nome {
+        font-size: 9px;
+        font-weight: 700;
+        color: rgba(255,255,255,0.85);
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+      }
+
+      .avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.25);
+        border: 2px solid rgba(255,255,255,0.5);
+        color: #fff;
+        font-size: 20px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 10px;
+      }
+
+      .tipo-badge {
+        display: inline-block;
+        font-size: 9px;
+        font-weight: 700;
+        color: #fff;
+        padding: 3px 10px;
+        border-radius: 20px;
+        letter-spacing: 1.5px;
+        background: rgba(255,255,255,0.2);
+        border: 1px solid rgba(255,255,255,0.4);
+      }
+
+      .cracha-body {
+        padding: 16px;
+        text-align: center;
+      }
+
+      .nome {
+        font-size: 14px;
+        font-weight: 700;
+        color: #1a1a2e;
+        line-height: 1.3;
+        margin-bottom: 8px;
+      }
+
+      .divider {
+        height: 1px;
+        background: #eee;
+        margin: 12px 0;
+      }
+
+      .barras {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 6px;
+        opacity: 0.85;
+      }
+
+      .barras svg { max-width: 100%; height: 32px; }
+
+      .codigo {
+        font-family: 'Courier New', monospace;
+        font-size: 10px;
+        color: #888;
+        letter-spacing: 1px;
+      }
+
+      .cracha-footer {
+        padding: 8px 12px;
+        text-align: center;
+      }
+
+      .footer-text {
+        font-size: 8px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        opacity: 0.75;
+      }
+
+      @media print {
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        body { background: white; padding: 10px; }
+        .cracha { box-shadow: 0 0 0 1px #ddd; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="grade">${cartoes}</div>
+    <script>window.onload = () => setTimeout(() => window.print(), 300)</script>
+  </body>
+  </html>`
 
     const w = window.open("", "_blank")
     w?.document.write(html)
@@ -308,7 +282,7 @@ const filtradasPorTipo = activeTab === "todos"
     { key: "paciente",    label: "Pacientes",     count: contagem("paciente"), icon: Users         },
     { key: "aluno",       label: "Alunos",        count: contagem("aluno"),    icon: BookOpen      },
     { key: "instrutor",   label: "Instrutores",   count: contagem("instrutor"),icon: GraduationCap },
-    { key: "trabalhador", label: "Trabalhadores", count: contagem("trabalhador"),icon: Briefcase   },
+    { key: "trabalhador", label: "Trabalhador", count: contagem("trabalhador"),icon: Briefcase   },
   ]
 
   return (
@@ -362,7 +336,7 @@ const filtradasPorTipo = activeTab === "todos"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}>
             <tab.icon className="h-3.5 w-3.5" />
-            {tab.label} ({tab.count})
+            {tab.label === 'Trabalhador' ? 'Voluntário' : tab.label} ({tab.count})
           </button>
         ))}
       </div>
@@ -395,7 +369,7 @@ const filtradasPorTipo = activeTab === "todos"
                     >
                       <td className="px-4 py-3 font-medium">{p.pessoaNome}</td>
                       <td className="px-4 py-3">
-                        <Badge variant={BADGE_VARIANT[p.tipo] ?? "outline"}>{p.tipoLabel}</Badge>
+                        <Badge variant={BADGE_VARIANT[p.tipo] ?? "outline"}>{p.tipoLabel === 'Trabalhador' ? 'Voluntário' : p.tipoLabel}</Badge>
                       </td>
                       <td className="px-4 py-3">{p.data} - 
                         <span className="text-sm font-medium text-foreground capitalize">

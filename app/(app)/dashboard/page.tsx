@@ -66,16 +66,16 @@ export default function DashboardPage() {
           color: "var(--primary)",
         },
         {
-          label: "Total de Instrutores e Trabalhadores",
+          label: "Total de Instrutores e Voluntários",
           value: stats.totalEquipe,
-          description: stats.totalEquipeDesc,
+          description: stats.totalEquipeDesc.replace('Trabalhadores', 'Voluntários'),
           icon: GraduationCap,
           color: "var(--accent)",
         },
         {
           label: "Presenças Hoje",
           value: stats.totalPresencasHoje,
-          description: stats.presencasHojeDesc || "Nenhuma presença hoje",
+          description: stats.presencasHojeDesc.replace('trabalhadors', 'Voluntários') || "Nenhuma presença hoje",
           icon: CalendarCheck,
           color: "var(--success)",
         },
@@ -93,7 +93,7 @@ export default function DashboardPage() {
     paciente: "Paciente",
     aluno: "Aluno",
     instrutor: "Instrutor",
-    trabalhador: "Trabalhador",
+    trabalhador: "Voluntário",
   }
 
   const tipoBadge: Record<string, "default" | "secondary" | "outline"> = {

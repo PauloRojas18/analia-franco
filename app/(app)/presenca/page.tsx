@@ -30,7 +30,7 @@ const TIPO_LABEL: Record<string, string> = {
   paciente: "Paciente",
   aluno: "Aluno",
   instrutor: "Instrutor",
-  trabalhador: "Trabalhador",
+  trabalhador: "Voluntário",
 }
 
 const TIPO_COR: Record<string, string> = {

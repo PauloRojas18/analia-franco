@@ -369,7 +369,7 @@ export default function PacientesPage() {
 
                   {!editando && (
                     <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
-                      Código gerado automaticamente com prefixo <span className="font-mono font-semibold">CEFASP</span>.
+                      Código gerado automaticamente com prefixo <span className="font-mono font-semibold">CEFAFP</span>.
                     </p>
                   )}
 
