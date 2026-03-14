@@ -35,9 +35,9 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { nome, blocoEstudo, telefone, endereco } = await req.json();
+    const { nome, blocoEstudo, telefone } = await req.json();
 
-    if (!nome || !blocoEstudo || !telefone || !endereco) {
+    if (!nome || !blocoEstudo || !telefone) {
       return NextResponse.json(
         { error: "Todos os campos são obrigatórios" },
         { status: 400 },
@@ -60,7 +60,6 @@ export async function POST(req: Request) {
         nome,
         blocoEstudo,
         telefone,
-        endereco,
         codigoBarras: `CEFAFA${proximoNum}`,
       },
     });

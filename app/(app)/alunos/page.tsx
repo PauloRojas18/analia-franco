@@ -27,7 +27,6 @@ interface Aluno {
   nome: string;
   blocoEstudo: string;
   telefone: string;
-  endereco: string;
   ativo: boolean;
   codigoBarras: string;
 }
@@ -36,7 +35,6 @@ interface FormData {
   nome: string;
   blocoEstudo: string;
   telefone: string;
-  endereco: string;
 }
 
 interface Vinculo {
@@ -62,7 +60,6 @@ const FORM_VAZIO: FormData = {
   nome: "",
   blocoEstudo: "",
   telefone: "",
-  endereco: "",
 };
 
 const TIPO_LABEL: Record<string, string> = {
@@ -73,7 +70,7 @@ const TIPO_LABEL: Record<string, string> = {
 };
 
 const CURSOS = [
-  "Conheça o Espiritísmo",
+  "Conheça o Espiritismo",
   "Nosso Lar",
   "Passe",
   "Corrente Magnética",
@@ -217,7 +214,6 @@ export default function AlunosPage() {
       nome: a.nome,
       blocoEstudo: a.blocoEstudo,
       telefone: a.telefone,
-      endereco: a.endereco,
     });
     setErroForm("");
     setVinculos([]);
@@ -287,7 +283,7 @@ export default function AlunosPage() {
   }
 
   async function salvar() {
-    if (!form.nome || !form.blocoEstudo || !form.telefone || !form.endereco) {
+    if (!form.nome || !form.blocoEstudo || !form.telefone) {
       setErroForm("Preencha todos os campos.");
       return;
     }
@@ -408,7 +404,6 @@ export default function AlunosPage() {
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Nome</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground hidden md:table-cell">Curso</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground hidden md:table-cell">Telefone</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground hidden lg:table-cell">Endereço</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Status</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Código de Barras</th>
                     <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Ações</th>
@@ -427,7 +422,6 @@ export default function AlunosPage() {
                         <Badge variant="secondary">{a.blocoEstudo}</Badge>
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell">{a.telefone}</td>
-                      <td className="px-4 py-3 hidden lg:table-cell max-w-[200px] truncate text-muted-foreground">{a.endereco}</td>
                       <td className="px-4 py-3">
                         <Badge variant={a.ativo ? "default" : "outline"}>
                           {a.ativo ? "Ativo" : "Inativo"}

@@ -487,7 +487,7 @@ export default function PacientesPage() {
       )}
 
       {crachaAberto && (
-        <ModalCracha
+        <ModalCracha  
           nome={crachaAberto.nome}
           tipo={crachaAberto.tipo}
           codigoBarras={crachaAberto.codigoBarras}
