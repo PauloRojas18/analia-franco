@@ -17,7 +17,6 @@ model Paciente {
   id           Int       @id @default(autoincrement())
   nome         String
   telefone     String
-  endereco     String
   ativo        Boolean   @default(true)
   codigoBarras String    @unique
   createdAt    DateTime  @default(now())
@@ -55,7 +54,6 @@ model Aluno {
   nome         String
   blocoEstudo  String
   telefone     String
-  endereco     String
   ativo        Boolean   @default(true)
   codigoBarras String    @unique
   createdAt    DateTime  @default(now())

@@ -14,7 +14,6 @@ interface Paciente {
   id: number
   nome: string
   telefone: string
-  endereco: string
   ativo: boolean
   codigoBarras: string
 }
@@ -22,14 +21,13 @@ interface Paciente {
 interface FormData {
   nome: string
   telefone: string
-  endereco: string
 }
 
 interface CrachaInfo { nome: string; tipo: string; codigoBarras: string }
 interface Vinculo { tipo: string; nome: string; codigoBarras: string }
 interface ResultadoBusca { tipo: string; nome: string; codigoBarras: string }
 
-const FORM_VAZIO: FormData = { nome: "", telefone: "", endereco: "" }
+const FORM_VAZIO: FormData = { nome: "", telefone: "" }
 const TIPO_LABEL: Record<string, string> = {
   paciente: "Paciente", aluno: "Aluno", instrutor: "Instrutor", trabalhador: "Trabalhador",
 }
@@ -110,7 +108,7 @@ export default function PacientesPage() {
 
   function abrirEditar(p: Paciente) {
     setEditando(p)
-    setForm({ nome: p.nome, telefone: p.telefone, endereco: p.endereco })
+    setForm({ nome: p.nome, telefone: p.telefone })
     setErroForm(""); setVinculos([]); setBuscaVinculo(""); setPrimeiraVez(""); setAbaModal("cadastro"); setModalAberto(true)
     buscarVinculos(p.codigoBarras)
   }
@@ -145,7 +143,7 @@ export default function PacientesPage() {
   }
 
   async function salvar() {
-    if (!form.nome || !form.telefone || !form.endereco) {
+    if (!form.nome || !form.telefone) {
       setAbaModal("cadastro")
       setErroForm("Preencha todos os campos.")
       return
@@ -187,9 +185,8 @@ export default function PacientesPage() {
   }
 
   const campos = [
-    { key: "nome",     label: "Nome",     placeholder: "Nome completo",       icon: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" },
-    { key: "telefone", label: "Telefone", placeholder: "(11) 99999-9999",     icon: "M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.15 12 19.79 19.79 0 0 1 1.1 3.38 2 2 0 0 1 3.08 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16z" },
-    { key: "endereco", label: "Endereço", placeholder: "Rua, número, bairro", icon: "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0zM12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" },
+    { key: "nome",     label: "Nome",     placeholder: "Nome completo",   icon: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" },
+    { key: "telefone", label: "Telefone", placeholder: "(11) 99999-9999", icon: "M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.15 12 19.79 19.79 0 0 1 1.1 3.38 2 2 0 0 1 3.08 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16z" },
   ] as const
 
   const abas = [
@@ -231,7 +228,6 @@ export default function PacientesPage() {
                   <tr className="border-b border-border">
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Nome</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground hidden md:table-cell">Telefone</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground hidden lg:table-cell">Endereço</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Status</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Crachá</th>
                     <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Ações</th>
@@ -244,7 +240,6 @@ export default function PacientesPage() {
                       onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                       <td className="px-4 py-3 font-medium">{p.nome}</td>
                       <td className="px-4 py-3 hidden md:table-cell">{p.telefone}</td>
-                      <td className="px-4 py-3 hidden lg:table-cell max-w-[200px] truncate text-muted-foreground">{p.endereco}</td>
                       <td className="px-4 py-3">
                         <Badge variant={p.ativo ? "default" : "outline"}>{p.ativo ? "Ativo" : "Inativo"}</Badge>
                       </td>

@@ -29,9 +29,9 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { nome, telefone, endereco } = await req.json()
+    const { nome, telefone, } = await req.json()
 
-    if (!nome || !telefone || !endereco) {
+    if (!nome || !telefone) {
       return NextResponse.json({ error: "Todos os campos são obrigatórios" }, { status: 400 })
     }
 
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
       : "000001"
 
     const paciente = await db.paciente.create({
-      data: { nome, telefone, endereco, codigoBarras: `CEFAFP${proximoNum}` },
+      data: { nome, telefone, codigoBarras: `CEFAFP${proximoNum}` },
     })
 
     return NextResponse.json(paciente, { status: 201 })
