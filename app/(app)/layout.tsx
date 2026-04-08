@@ -25,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" style={{ zoom: 0.8 }}>
       <body className={`${inter.variable} font-sans antialiased`}>
         <Sidebar />
         <main className="min-h-screen lg:ml-[260px] p-8 lg:p-10">

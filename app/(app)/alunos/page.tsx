@@ -70,6 +70,7 @@ const TIPO_LABEL: Record<string, string> = {
 };
 
 const CURSOS = [
+  "Assistidos",
   "Conheça o Espiritismo",
   "Nosso Lar",
   "Passe",
@@ -397,9 +398,9 @@ export default function AlunosPage() {
               Nenhum aluno encontrado.
             </p>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto overflow-y-auto max-h-[60vh]">
               <table className="w-full text-sm">
-                <thead>
+                <thead className="sticky top-0 z-10" style={{ background: "var(--card)" }}>
                   <tr className="border-b border-border">
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Nome</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground hidden md:table-cell">Curso</th>

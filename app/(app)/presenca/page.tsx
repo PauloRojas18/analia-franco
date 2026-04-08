@@ -226,9 +226,9 @@ export default function PresencaPage() {
           {presencas.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">Nenhuma presença registrada hoje.</p>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto overflow-y-auto max-h-[60vh]">
               <table className="w-full text-sm">
-                <thead>
+                <thead className="sticky top-0 z-10" style={{ background: "var(--card)" }}>
                   <tr className="border-b border-border">
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Nome</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Tipo</th>
