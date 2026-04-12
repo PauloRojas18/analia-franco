@@ -73,7 +73,7 @@ export default function ModalCracha({ nome, tipo, codigoBarras, subtitulo, onFec
 <body>
   <div class="cracha">
     <div class="cracha-header">
-      <div class="org-nome">${orgNome}</div>
+      <div class="org-nome">${orgNome === "Assistidos" ? "Trabalho Assistencial Silvana Maria" : orgNome}</div>
       <div class="avatar">${iniciais}</div>
       <div class="tipo-badge">${cor.label.toUpperCase()}</div>
     </div>
