@@ -165,7 +165,7 @@ export default function DashboardPage() {
                           <td className="px-4 py-3 font-medium">{p.pessoaNome}</td>
                           <td className="px-4 py-3">
                             <Badge variant={tipoBadge[p.tipo] ?? "outline"}>
-                              {tipoLabel[p.tipo] ?? p.tipo}
+                              {tipoLabel[p.tipo === 'Assistidos' ? 'T.A Silvana Maria' : p.tipo] ?? p.tipo}
                             </Badge>
                           </td>
                           <td className="px-4 py-3 font-mono text-sm">{p.horario}</td>

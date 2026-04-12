@@ -245,7 +245,7 @@ export default function PresencaPage() {
                       <td className="px-4 py-3 font-medium">{p.pessoaNome}</td>
                       <td className="px-4 py-3">
                         <Badge variant={TIPO_COR[p.tipo] as "default" | "secondary" | "outline"}>
-                          {TIPO_LABEL[p.tipo] ?? p.tipo}
+                          {TIPO_LABEL[p.tipo === 'Assistidos' ? 'T.A Silvana Maria' : p.tipo && (p.tipo === 'Trabalhador' ? 'Voluntário' : p.tipo)] ?? p.tipo}
                         </Badge>
                       </td>
                       <td className="px-4 py-3 font-mono text-sm">{p.horario}</td>

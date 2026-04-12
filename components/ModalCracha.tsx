@@ -127,7 +127,7 @@ export default function ModalCracha({ nome, tipo, codigoBarras, subtitulo, onFec
           padding: "28px 24px 20px", textAlign: "center",
         }}>
           <p style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.8)", letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>
-            {orgNome}
+            {orgNome === "Assistidos" ? "Trabalho Assistencial Silvana Maria" : orgNome}
           </p>
           <div style={{
             width: 64, height: 64, borderRadius: "50%",

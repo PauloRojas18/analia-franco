@@ -420,7 +420,7 @@ export default function AlunosPage() {
                     >
                       <td className="px-4 py-3 font-medium">{a.nome}</td>
                       <td className="px-4 py-3 hidden md:table-cell">
-                        <Badge variant="secondary">{a.blocoEstudo}</Badge>
+                        <Badge variant="secondary">{a.blocoEstudo === 'Assistidos' ? 'T.A Silvana Maria' : a.blocoEstudo}</Badge>
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell">{a.telefone}</td>
                       <td className="px-4 py-3">

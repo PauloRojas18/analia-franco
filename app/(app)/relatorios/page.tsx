@@ -389,7 +389,7 @@ export default function RelatoriosPage() {
                       <td className="px-4 py-3 font-medium">{p.pessoaNome}</td>
                       <td className="px-4 py-3">
                         <Badge variant={BADGE_VARIANT[p.tipo] ?? "outline"}>
-                          {p.tipoLabel === "Trabalhador" ? "Voluntário" : p.tipoLabel}
+                          {p.tipoLabel === "Trabalhador" ? "Voluntário" : p.tipoLabel && (p.tipoLabel === "Assistidos" ? "T.A Silvana Maria" : p.tipoLabel)}
                         </Badge>
                       </td>
                       <td className="px-4 py-3">
