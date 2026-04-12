@@ -54,6 +54,7 @@ model Aluno {
   nome         String
   blocoEstudo  String
   telefone     String
+  oficina      String?    
   ativo        Boolean   @default(true)
   codigoBarras String    @unique
   createdAt    DateTime  @default(now())

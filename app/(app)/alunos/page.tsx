@@ -26,6 +26,7 @@ interface Aluno {
   id: number;
   nome: string;
   blocoEstudo: string;
+  oficina: string | null;
   telefone: string;
   ativo: boolean;
   codigoBarras: string;
@@ -34,6 +35,7 @@ interface Aluno {
 interface FormData {
   nome: string;
   blocoEstudo: string;
+  oficina: string;
   telefone: string;
 }
 
@@ -54,11 +56,13 @@ interface CrachaInfo {
   tipo: string;
   codigoBarras: string;
   subtitulo?: string;
+  oficina?: string;
 }
 
 const FORM_VAZIO: FormData = {
   nome: "",
   blocoEstudo: "",
+  oficina: "",
   telefone: "",
 };
 
@@ -76,6 +80,15 @@ const CURSOS = [
   "Passe",
   "Corrente Magnética",
   "Vibração",
+];
+
+const OFICINAS = [
+  "Horta Comunitária",
+  "Artesanato",
+  "Mãe Gestante",
+  "CFAS — Campanha de Auta de Souza",
+  "CECX — Campanha de Esclarecimento Chico Xavier",
+  "CAFS — Campanha de Assistência Francisco de Assis",
 ];
 
 const campos = [
@@ -110,22 +123,27 @@ export default function AlunosPage() {
   const [mostrarDropdown, setMostrarDropdown] = useState(false);
   const [crachaAberto, setCrachaAberto] = useState<CrachaInfo | null>(null);
   const [cursoAberto, setCursoAberto] = useState(false);
+  const [oficinaAberta, setOficinaAberta] = useState(false);
 
   const buscaRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const cursoRef = useRef<HTMLDivElement>(null);
+  const oficinaRef = useRef<HTMLDivElement>(null);
 
-  // ── Fechar dropdown de curso ao clicar fora ──────────────────────────────
+  const isAssistido = form.blocoEstudo === "Assistidos";
+
+  // ── Fechar dropdowns ao clicar fora ─────────────────────────────────────
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (cursoRef.current && !cursoRef.current.contains(e.target as Node))
         setCursoAberto(false);
+      if (oficinaRef.current && !oficinaRef.current.contains(e.target as Node))
+        setOficinaAberta(false);
     }
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // ── Fechar dropdown de vínculo ao clicar fora ────────────────────────────
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (
@@ -206,6 +224,7 @@ export default function AlunosPage() {
     setVinculos([]);
     setBuscaVinculo("");
     setCursoAberto(false);
+    setOficinaAberta(false);
     setModalAberto(true);
   }
 
@@ -214,12 +233,14 @@ export default function AlunosPage() {
     setForm({
       nome: a.nome,
       blocoEstudo: a.blocoEstudo,
+      oficina: a.oficina ?? "",
       telefone: a.telefone,
     });
     setErroForm("");
     setVinculos([]);
     setBuscaVinculo("");
     setCursoAberto(false);
+    setOficinaAberta(false);
     setModalAberto(true);
     buscarVinculos(a.codigoBarras);
   }
@@ -232,6 +253,17 @@ export default function AlunosPage() {
     setVinculos([]);
     setBuscaVinculo("");
     setResultadosBusca([]);
+    setCursoAberto(false);
+    setOficinaAberta(false);
+  }
+
+  // Quando mudar o curso, limpa a oficina se não for Assistidos
+  function selecionarCurso(curso: string) {
+    setForm((prev) => ({
+      ...prev,
+      blocoEstudo: curso,
+      oficina: curso !== "Assistidos" ? "" : prev.oficina,
+    }));
     setCursoAberto(false);
   }
 
@@ -288,15 +320,25 @@ export default function AlunosPage() {
       setErroForm("Preencha todos os campos.");
       return;
     }
+    if (isAssistido && !form.oficina) {
+      setErroForm("Selecione a oficina para o aluno Assistido.");
+      return;
+    }
     setSalvando(true);
     setErroForm("");
     try {
+      const body = {
+        nome: form.nome,
+        blocoEstudo: form.blocoEstudo,
+        oficina: isAssistido ? form.oficina : null,
+        telefone: form.telefone,
+      };
       const res = await fetch(
         editando ? `/api/alunos/${editando.id}` : "/api/alunos",
         {
           method: editando ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
+          body: JSON.stringify(body),
         },
       );
       if (!res.ok) {
@@ -420,7 +462,16 @@ export default function AlunosPage() {
                     >
                       <td className="px-4 py-3 font-medium">{a.nome}</td>
                       <td className="px-4 py-3 hidden md:table-cell">
-                        <Badge variant="secondary">{a.blocoEstudo === 'Assistidos' ? 'T.A Silvana Maria' : a.blocoEstudo}</Badge>
+                        <div className="flex flex-col gap-1">
+                          <Badge variant="secondary">
+                            {a.blocoEstudo === "Assistidos" ? "T.A Silvana Maria" : a.blocoEstudo}
+                          </Badge>
+                          {a.blocoEstudo === "Assistidos" && a.oficina && (
+                            <Badge variant="outline" className="text-xs">
+                              {a.oficina}
+                            </Badge>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell">{a.telefone}</td>
                       <td className="px-4 py-3">
@@ -428,7 +479,9 @@ export default function AlunosPage() {
                           {a.ativo ? "Ativo" : "Inativo"}
                         </Badge>
                       </td>
-                      <td className="px-4 py-3 hidden sm:table-cell font-mono text-xs text-muted-foreground">{a.codigoBarras}</td>
+                      <td className="px-4 py-3 hidden sm:table-cell font-mono text-xs text-muted-foreground">
+                        {a.codigoBarras}
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
                           <Button
@@ -442,6 +495,7 @@ export default function AlunosPage() {
                                 tipo: "aluno",
                                 codigoBarras: a.codigoBarras,
                                 subtitulo: a.blocoEstudo,
+                                oficina: a.oficina ?? undefined,
                               })
                             }
                           >
@@ -494,14 +548,12 @@ export default function AlunosPage() {
       {/* ── Modal criar / editar ──────────────────────────────────────────── */}
       {modalAberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Overlay */}
           <div
             className="absolute inset-0"
             style={{ background: "color-mix(in srgb, var(--sidebar-bg) 75%, transparent)" }}
             onClick={fecharModal}
           />
 
-          {/* Painel */}
           <div
             className="relative z-10 w-full max-w-md flex flex-col"
             style={{
@@ -531,7 +583,6 @@ export default function AlunosPage() {
 
               {/* Campos de texto */}
               <div className="flex flex-col gap-4">
-                {/* Nome */}
                 {campos.map(({ key, label, placeholder, icon }) => (
                   <div key={key} className="flex flex-col gap-1.5">
                     <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
@@ -562,13 +613,12 @@ export default function AlunosPage() {
                   </div>
                 ))}
 
-                {/* ── Select customizado: Curso ───────────────────────────── */}
+                {/* ── Select: Curso ────────────────────────────────────────── */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
                     Curso
                   </label>
                   <div ref={cursoRef} className="relative">
-                    {/* Botão que abre o dropdown */}
                     <button
                       type="button"
                       onClick={() => setCursoAberto((v) => !v)}
@@ -581,7 +631,6 @@ export default function AlunosPage() {
                         cursor: "pointer",
                       }}
                     >
-                      {/* Ícone escudo/curso */}
                       <svg
                         className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
                         width="15" height="15" viewBox="0 0 24 24"
@@ -592,7 +641,6 @@ export default function AlunosPage() {
                       <span className="flex-1">
                         {form.blocoEstudo || "Selecione um curso..."}
                       </span>
-                      {/* Chevron animado */}
                       <ChevronDown
                         className="h-4 w-4 flex-shrink-0 transition-transform duration-200"
                         style={{
@@ -602,7 +650,6 @@ export default function AlunosPage() {
                       />
                     </button>
 
-                    {/* Lista de opções */}
                     {cursoAberto && (
                       <div
                         className="absolute top-full left-0 right-0 z-20 mt-1"
@@ -622,16 +669,13 @@ export default function AlunosPage() {
                             <button
                               key={curso}
                               type="button"
-                              onClick={() => {
-                                setForm({ ...form, blocoEstudo: curso });
-                                setCursoAberto(false);
-                              }}
+                              onClick={() => selecionarCurso(curso)}
                               className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left rounded-md transition-colors"
                               style={{
                                 background: selecionado ? "var(--secondary)" : "none",
                                 border: "none",
                                 cursor: "pointer",
-                                color: selecionado ? "var(--foreground)" : "var(--foreground)",
+                                color: "var(--foreground)",
                                 fontWeight: selecionado ? 500 : 400,
                               }}
                               onMouseEnter={(e) => {
@@ -641,11 +685,8 @@ export default function AlunosPage() {
                                 if (!selecionado) e.currentTarget.style.background = "none";
                               }}
                             >
-                              {/* Espaço para o checkmark */}
                               <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center">
-                                {selecionado && (
-                                  <Check className="h-3.5 w-3.5" style={{ color: "var(--primary)" }} />
-                                )}
+                                {selecionado && <Check className="h-3.5 w-3.5" style={{ color: "var(--primary)" }} />}
                               </span>
                               {curso}
                             </button>
@@ -655,7 +696,113 @@ export default function AlunosPage() {
                     )}
                   </div>
                 </div>
-                {/* ── fim select curso ────────────────────────────────────── */}
+
+                {/* ── Select: Oficina (só para Assistidos) ─────────────────── */}
+                {isAssistido && (
+                  <div className="flex flex-col gap-1.5">
+                    {/* Label com badge EEA */}
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
+                        Oficina
+                      </label>
+                      <span
+                        style={{
+                          fontSize: 9, fontWeight: 700,
+                          padding: "2px 8px", borderRadius: 20,
+                          letterSpacing: 1, textTransform: "uppercase",
+                          background: "var(--primary)18",
+                          border: "1px solid var(--primary)40",
+                          color: "var(--primary)",
+                        }}
+                      >
+                        EEA
+                      </span>
+                    </div>
+
+                    <div ref={oficinaRef} className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setOficinaAberta((v) => !v)}
+                        className="w-full flex items-center gap-2.5 pl-10 pr-4 py-3 text-sm text-left outline-none transition-all"
+                        style={{
+                          background: "var(--background)",
+                          border: `1px solid ${oficinaAberta ? "var(--primary)" : "var(--border)"}`,
+                          color: form.oficina ? "var(--foreground)" : "var(--muted-foreground)",
+                          borderRadius: "var(--radius)",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {/* Ícone ferramenta/oficina */}
+                        <svg
+                          className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                          width="15" height="15" viewBox="0 0 24 24"
+                          fill="none" stroke="var(--muted-foreground)" strokeWidth="2"
+                        >
+                          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                        </svg>
+                        <span className="flex-1">
+                          {form.oficina || "Selecione uma oficina..."}
+                        </span>
+                        <ChevronDown
+                          className="h-4 w-4 flex-shrink-0 transition-transform duration-200"
+                          style={{
+                            color: "var(--muted-foreground)",
+                            transform: oficinaAberta ? "rotate(180deg)" : "rotate(0deg)",
+                          }}
+                        />
+                      </button>
+
+                      {oficinaAberta && (
+                        <div
+                          className="absolute top-full left-0 right-0 z-20 mt-1"
+                          style={{
+                            background: "color-mix(in srgb, var(--card) 96%, transparent)",
+                            backdropFilter: "blur(16px)",
+                            WebkitBackdropFilter: "blur(16px)",
+                            border: "1px solid var(--border)",
+                            borderRadius: "var(--radius)",
+                            boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+                            padding: "6px",
+                          }}
+                        >
+                          {OFICINAS.map((oficina) => {
+                            const selecionada = form.oficina === oficina;
+                            return (
+                              <button
+                                key={oficina}
+                                type="button"
+                                onClick={() => {
+                                  setForm((prev) => ({ ...prev, oficina }));
+                                  setOficinaAberta(false);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left rounded-md transition-colors"
+                                style={{
+                                  background: selecionada ? "var(--secondary)" : "none",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  color: "var(--foreground)",
+                                  fontWeight: selecionada ? 500 : 400,
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (!selecionada) e.currentTarget.style.background = "var(--secondary)";
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (!selecionada) e.currentTarget.style.background = "none";
+                                }}
+                              >
+                                <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center">
+                                  {selecionada && <Check className="h-3.5 w-3.5" style={{ color: "var(--primary)" }} />}
+                                </span>
+                                {oficina}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {/* ── fim selects ──────────────────────────────────────────── */}
               </div>
 
               {/* Divisor */}
@@ -696,7 +843,6 @@ export default function AlunosPage() {
                   </div>
                 )}
 
-                {/* Campo busca vínculo */}
                 <div className="relative">
                   <svg
                     className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
@@ -827,6 +973,7 @@ export default function AlunosPage() {
           tipo={crachaAberto.tipo}
           codigoBarras={crachaAberto.codigoBarras}
           subtitulo={crachaAberto.subtitulo}
+          oficina={crachaAberto.oficina}
           onFechar={() => setCrachaAberto(null)}
         />
       )}

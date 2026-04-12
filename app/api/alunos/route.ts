@@ -35,7 +35,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { nome, blocoEstudo, telefone } = await req.json();
+    const { nome, blocoEstudo, oficina, telefone } = await req.json();
 
     if (!nome || !blocoEstudo || !telefone) {
       return NextResponse.json(
@@ -59,6 +59,7 @@ export async function POST(req: Request) {
       data: {
         nome,
         blocoEstudo,
+        oficina: blocoEstudo === "Assistidos" ? (oficina ?? null) : null,
         telefone,
         codigoBarras: `CEFAFA${proximoNum}`,
       },

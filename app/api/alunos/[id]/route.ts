@@ -10,11 +10,16 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const { nome, blocoEstudo, telefone, endereco } = await req.json();
+    const { nome, blocoEstudo, oficina, telefone } = await req.json();
 
     const aluno = await db.aluno.update({
       where: { id: parseInt(id) },
-      data: { nome, blocoEstudo, telefone, endereco },
+      data: {
+        nome,
+        blocoEstudo,
+        oficina: blocoEstudo === "Assistidos" ? (oficina ?? null) : null,
+        telefone,
+      },
     });
 
     return NextResponse.json(aluno);
