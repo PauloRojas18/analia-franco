@@ -80,6 +80,12 @@ const CURSOS = [
   "Passe",
   "Corrente Magnética",
   "Vibração",
+  "Instituto da Mocidade",
+  "Instituto da Infancia",
+  "Instituto da Cariadade",
+  "Instituto da Divulgação",
+  "Instituto da Exclarecimento",
+  "Instituto da Mediunidade"
 ];
 
 const OFICINAS = [
