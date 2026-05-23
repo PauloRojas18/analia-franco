@@ -44,25 +44,24 @@ export async function POST(req: Request) {
       );
     }
 
-    const ultimo = await db.aluno.findFirst({
-      where: { codigoBarras: { startsWith: "CEFAFA" } },
-      orderBy: { codigoBarras: "desc" },
-    });
+    const aluno = await db.$transaction(async (tx) => {
+      const result = await tx.$queryRaw<[{ max_num: number | null }]>`
+        SELECT MAX(CAST(SUBSTRING("codigoBarras" FROM 7) AS INTEGER)) AS max_num
+        FROM "Aluno"
+        WHERE "codigoBarras" ~ '^CEFAFA[0-9]{6}$'
+      `;
 
-    const proximoNum = ultimo
-      ? String(
-          parseInt(ultimo.codigoBarras.replace("CEFAFA", "")) + 1,
-        ).padStart(6, "0")
-      : "000001";
+      const proximoNum = String((result[0]?.max_num ?? 0) + 1).padStart(6, "0");
 
-    const aluno = await db.aluno.create({
-      data: {
-        nome,
-        blocoEstudo,
-        oficina: blocoEstudo === "Assistidos" ? (oficina ?? null) : null,
-        telefone,
-        codigoBarras: `CEFAFA${proximoNum}`,
-      },
+      return tx.aluno.create({
+        data: {
+          nome,
+          blocoEstudo,
+          oficina: blocoEstudo === "Assistidos" ? (oficina ?? null) : null,
+          telefone,
+          codigoBarras: `CEFAFA${proximoNum}`,
+        },
+      });
     });
 
     return NextResponse.json(aluno, { status: 201 });

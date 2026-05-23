@@ -12,10 +12,10 @@ const TIPO_LABEL: Record<string, string> = {
 }
 
 export async function GET(req: Request) {
-  try{
+  try {
     const { searchParams } = new URL(req.url)
     const data = searchParams.get("data")
-    const curso = searchParams.get("curso") // novo
+    const curso = searchParams.get("curso")
 
     let whereHorario: any = {}
     if (data) {
@@ -24,7 +24,6 @@ export async function GET(req: Request) {
       whereHorario = { horario: { gte: inicio, lte: fim } }
     }
 
-    // Se filtrou por curso, só traz presenças de alunos daquele curso
     if (curso) {
       whereHorario = { ...whereHorario, tipo: "aluno", aluno: { blocoEstudo: curso } }
     }
@@ -40,8 +39,6 @@ export async function GET(req: Request) {
       },
     })
 
-
-
     const resultado = presencas.map((p) => {
       const pessoa = p.paciente ?? p.aluno ?? p.instrutor ?? p.trabalhador
       const dt = new Date(p.horario)
@@ -54,6 +51,8 @@ export async function GET(req: Request) {
         data: dt.toLocaleDateString("pt-BR"),
         horario: dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
         horarioISO: p.horario,
+        // ✅ campo adicionado — só existe para alunos, null para os demais
+        curso: p.aluno?.blocoEstudo ?? null,
       }
     })
 

@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ScanBarcode, Clock, CheckCircle2, AlertCircle, X } from "lucide-react"
+import { ScanBarcode, Clock, CheckCircle2, AlertCircle, X, Trash2 } from "lucide-react"
 
 interface Presenca {
   id: number
@@ -43,8 +43,13 @@ const TIPO_COR: Record<string, string> = {
 export default function PresencaPage() {
   const [barcode, setBarcode] = useState("")
   const [presencas, setPresencas] = useState<Presenca[]>([])
-  const [status, setStatus] = useState<StatusLeitura>({ tipo: "aguardando", mensagem: "Aguardando leitura...", submensagem: "Passe o crachá no leitor para registrar a presença" })
+  const [status, setStatus] = useState<StatusLeitura>({
+    tipo: "aguardando",
+    mensagem: "Aguardando leitura...",
+    submensagem: "Passe o crachá no leitor para registrar a presença",
+  })
   const [popupVinculos, setPopupVinculos] = useState<{ vinculos: Vinculo[]; codigoOrigem: string } | null>(null)
+  const [confirmandoId, setConfirmandoId] = useState<number | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const buscarPresencas = useCallback(async () => {
@@ -83,7 +88,11 @@ export default function PresencaPage() {
 
       if (!res.ok) {
         setStatus({ tipo: "erro", mensagem: "Crachá não encontrado", submensagem: `Código: ${codigo}` })
-        setTimeout(() => setStatus({ tipo: "aguardando", mensagem: "Aguardando leitura...", submensagem: "Passe o crachá no leitor para registrar a presença" }), 3000)
+        setTimeout(() => setStatus({
+          tipo: "aguardando",
+          mensagem: "Aguardando leitura...",
+          submensagem: "Passe o crachá no leitor para registrar a presença",
+        }), 3000)
         return
       }
 
@@ -97,7 +106,11 @@ export default function PresencaPage() {
       await registrarPresenca(data.vinculos[0].codigoBarras, data.vinculos[0].tipo)
     } catch {
       setStatus({ tipo: "erro", mensagem: "Erro de conexão", submensagem: "Tente novamente" })
-      setTimeout(() => setStatus({ tipo: "aguardando", mensagem: "Aguardando leitura...", submensagem: "Passe o crachá no leitor para registrar a presença" }), 3000)
+      setTimeout(() => setStatus({
+        tipo: "aguardando",
+        mensagem: "Aguardando leitura...",
+        submensagem: "Passe o crachá no leitor para registrar a presença",
+      }), 3000)
     }
   }
 
@@ -125,9 +138,23 @@ export default function PresencaPage() {
       setStatus({ tipo: "erro", mensagem: "Erro de conexão", submensagem: "Tente novamente" })
     } finally {
       setTimeout(() => {
-        setStatus({ tipo: "aguardando", mensagem: "Aguardando leitura...", submensagem: "Passe o crachá no leitor para registrar a presença" })
+        setStatus({
+          tipo: "aguardando",
+          mensagem: "Aguardando leitura...",
+          submensagem: "Passe o crachá no leitor para registrar a presença",
+        })
         inputRef.current?.focus()
       }, 3000)
+    }
+  }
+
+  async function deletarPresenca(id: number) {
+    try {
+      await fetch(`/api/presenca/${id}`, { method: "DELETE" })
+      setConfirmandoId(null)
+      buscarPresencas()
+    } catch {
+      console.error("Erro ao deletar presença")
     }
   }
 
@@ -234,22 +261,73 @@ export default function PresencaPage() {
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Tipo</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Horário</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground hidden md:table-cell">Código</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
                   {presencas.map((p) => (
-                    <tr key={p.id} className="border-b border-border last:border-0"
-                      onMouseEnter={e => (e.currentTarget.style.background = "var(--secondary)")}
-                      onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                    <tr
+                      key={p.id}
+                      className="border-b border-border last:border-0 transition-colors"
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--secondary)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     >
                       <td className="px-4 py-3 font-medium">{p.pessoaNome}</td>
                       <td className="px-4 py-3">
                         <Badge variant={TIPO_COR[p.tipo] as "default" | "secondary" | "outline"}>
-                          {TIPO_LABEL[p.tipo === 'Assistidos' ? 'T.A Silvana Maria' : p.tipo && (p.tipo === 'Trabalhador' ? 'Voluntário' : p.tipo)] ?? p.tipo}
+                          {TIPO_LABEL[p.tipo] ?? p.tipo}
                         </Badge>
                       </td>
                       <td className="px-4 py-3 font-mono text-sm">{p.horario}</td>
-                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground hidden md:table-cell">{p.codigoBarras}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground hidden md:table-cell">
+                        {p.codigoBarras}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-1">
+                          {confirmandoId === p.id ? (
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => deletarPresenca(p.id)}
+                                className="h-8 px-3 text-xs font-semibold rounded-md"
+                                style={{
+                                  background: "var(--destructive)",
+                                  color: "#fff",
+                                  border: "none",
+                                  cursor: "pointer",
+                                }}
+                              >
+                                Confirmar
+                              </button>
+                              <button
+                                onClick={() => setConfirmandoId(null)}
+                                className="h-8 px-3 text-xs font-semibold rounded-md"
+                                style={{
+                                  background: "var(--muted)",
+                                  color: "var(--muted-foreground)",
+                                  border: "1px solid var(--border)",
+                                  cursor: "pointer",
+                                }}
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setConfirmandoId(p.id) }}
+                              className="flex h-8 w-8 items-center justify-center rounded-md transition-colors"
+                              style={{
+                                background: "none",
+                                border: "1px solid var(--border)",
+                                color: "var(--destructive)",
+                                cursor: "pointer",
+                              }}
+                              title="Remover presença"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -308,12 +386,12 @@ export default function PresencaPage() {
                       cursor: "pointer",
                       color: "var(--foreground)",
                     }}
-                    onMouseEnter={e => {
+                    onMouseEnter={(e) => {
                       (e.currentTarget as HTMLButtonElement).style.background = "var(--primary)"
                       ;(e.currentTarget as HTMLButtonElement).style.color = "var(--primary-foreground)"
                       ;(e.currentTarget as HTMLButtonElement).style.borderColor = "var(--primary)"
                     }}
-                    onMouseLeave={e => {
+                    onMouseLeave={(e) => {
                       (e.currentTarget as HTMLButtonElement).style.background = "var(--background)"
                       ;(e.currentTarget as HTMLButtonElement).style.color = "var(--foreground)"
                       ;(e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border)"

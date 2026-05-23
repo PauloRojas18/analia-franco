@@ -9,14 +9,14 @@ import { Badge } from "@/components/ui/badge"
 import {
   Download, Printer, FileText, Users, GraduationCap,
   Calendar, Loader2, Briefcase, BookOpen, Search,
-  ChevronDown, Check, ClipboardList, UserSquare2,
+  ChevronDown, Check, ClipboardList, UserSquare2, Trash2, HandHeart,
 } from "lucide-react"
 import JsBarcode from "jsbarcode"
 
 // ─── Tipos ──────────────────────────────────────────────────────────────────
 
-type TabType     = "todos" | "paciente" | "aluno" | "instrutor" | "trabalhador"
-type SecaoType   = "presencas" | "cadastros"
+type TabType   = "todos" | "paciente" | "aluno" | "assistido" | "instrutor" | "trabalhador"
+type SecaoType = "presencas" | "cadastros"
 
 interface Presenca {
   id: number
@@ -27,6 +27,7 @@ interface Presenca {
   data: string
   horario: string
   horarioISO: string
+  curso?: string | null
 }
 
 interface Pessoa {
@@ -43,6 +44,7 @@ interface Pessoa {
 const BADGE_VARIANT: Record<string, "default" | "secondary" | "outline"> = {
   paciente:    "default",
   aluno:       "secondary",
+  assistido:   "secondary",
   instrutor:   "outline",
   trabalhador: "outline",
 }
@@ -60,21 +62,33 @@ function hoje(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
-// ─── Utilidades ──────────────────────────────────────────────────────────────
+// ─── Helpers de filtragem ─────────────────────────────────────────────────────
+
+function isAssistido(p: { tipo: string; curso?: string | null }) {
+  return p.tipo === "aluno" && p.curso === "Assistidos"
+}
+
+function matchTab<T extends { tipo: string; curso?: string | null }>(item: T, tab: TabType): boolean {
+  if (tab === "todos")       return true
+  if (tab === "assistido")   return isAssistido(item)
+  if (tab === "aluno")       return item.tipo === "aluno" && !isAssistido(item)
+  return item.tipo === tab
+}
+
+// ─── Utilidades de impressão ──────────────────────────────────────────────────
 
 function gerarBarrasSVG(codigo: string): string {
   const svgNode = document.createElementNS("http://www.w3.org/2000/svg", "svg")
   JsBarcode(svgNode, codigo, {
-    format: "CODE128",
-    width: 2,
-    height: 40,
-    displayValue: false,
-    margin: 0,
+    format: "CODE128", width: 2, height: 40, displayValue: false, margin: 0,
   })
   return svgNode.outerHTML
 }
 
-function construirHTMLCrachas(lista: { nome: string; tipo: string; tipoLabel: string; codigoBarras: string }[], titulo: string): string {
+function construirHTMLCrachas(
+  lista: { nome: string; tipo: string; tipoLabel: string; codigoBarras: string }[],
+  titulo: string,
+): string {
   const cartoes = lista.map((p) => {
     const cor = TIPO_COR[p.tipo] ?? { bg: "#333", accent: "#666", label: p.tipoLabel }
     const barrasSVG = gerarBarrasSVG(p.codigoBarras)
@@ -134,16 +148,25 @@ function construirHTMLCrachas(lista: { nome: string; tipo: string; tipoLabel: st
 </html>`
 }
 
+// ─── Labels de exibição ───────────────────────────────────────────────────────
+
+function labelTipo(tipoLabel: string): string {
+  if (tipoLabel === "Trabalhador") return "Voluntário"
+  if (tipoLabel === "Assistidos")  return "T.A Silvana Maria"
+  return tipoLabel
+}
+
 // ─── Sub-componente: Seção de Presenças ──────────────────────────────────────
 
 function SecaoPresencas() {
-  const [presencas, setPresencas]     = useState<Presenca[]>([])
-  const [loading, setLoading]         = useState(true)
+  const [presencas, setPresencas]       = useState<Presenca[]>([])
+  const [loading, setLoading]           = useState(true)
   const [selectedDate, setSelectedDate] = useState(hoje())
-  const [activeTab, setActiveTab]     = useState<TabType>("todos")
-  const [search, setSearch]           = useState("")
-  const [filtroCurso, setFiltroCurso] = useState("")
-  const [cursoAberto, setCursoAberto] = useState(false)
+  const [activeTab, setActiveTab]       = useState<TabType>("todos")
+  const [search, setSearch]             = useState("")
+  const [filtroCurso, setFiltroCurso]   = useState("")
+  const [cursoAberto, setCursoAberto]   = useState(false)
+  const [confirmandoId, setConfirmandoId] = useState<number | null>(null)
   const cursoRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -169,11 +192,21 @@ function SecaoPresencas() {
 
   useEffect(() => { buscar() }, [buscar])
 
-  const contagem = (tipo: string) => presencas.filter(p => p.tipo === tipo).length
+  async function deletarPresenca(id: number) {
+    try {
+      await fetch(`/api/presenca/${id}`, { method: "DELETE" })
+      setConfirmandoId(null)
+      buscar()
+    } catch (err) { console.error("Erro ao deletar presença", err) }
+  }
 
-  const filtradasPorTipo = activeTab === "todos"
-    ? presencas
-    : presencas.filter(p => p.tipo === activeTab)
+  // Contagens por aba
+  const contagem = (tab: TabType) =>
+    tab === "todos"
+      ? presencas.length
+      : presencas.filter(p => matchTab(p, tab)).length
+
+  const filtradasPorTipo = presencas.filter(p => matchTab(p, activeTab))
 
   const filtradas = search.trim()
     ? filtradasPorTipo.filter(p =>
@@ -186,30 +219,31 @@ function SecaoPresencas() {
   function exportarCSV() {
     const linhas = [
       ["Nome", "Tipo", "Data", "Horário", "Código"],
-      ...filtradas.map(p => [p.pessoaNome, p.tipoLabel, p.data, p.horario, p.codigoBarras]),
+      ...filtradas.map(p => [p.pessoaNome, labelTipo(p.tipoLabel), p.data, p.horario, p.codigoBarras]),
     ]
     const csv = linhas.map(l => l.map(c => `"${c}"`).join(",")).join("\n")
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
-    a.href = url
-    a.download = `presencas-${selectedDate}.csv`
-    a.click()
+    a.href = url; a.download = `presencas-${selectedDate}.csv`; a.click()
     URL.revokeObjectURL(url)
   }
 
-  const tabs: { key: TabType; label: string; count: number; icon: React.ElementType }[] = [
-    { key: "todos",       label: "Todos",       count: presencas.length,          icon: FileText      },
-    { key: "paciente",    label: "Pacientes",   count: contagem("paciente"),      icon: Users         },
-    { key: "aluno",       label: "Alunos",      count: contagem("aluno"),         icon: BookOpen      },
-    { key: "instrutor",   label: "Instrutores", count: contagem("instrutor"),     icon: GraduationCap },
-    { key: "trabalhador", label: "Voluntários", count: contagem("trabalhador"),   icon: Briefcase     },
+  const tabs: { key: TabType; label: string; icon: React.ElementType }[] = [
+    { key: "todos",       label: `Todos (${contagem("todos")})`,             icon: FileText      },
+    { key: "paciente",    label: `Pacientes (${contagem("paciente")})`,      icon: Users         },
+    { key: "aluno",       label: `Alunos (${contagem("aluno")})`,            icon: BookOpen      },
+    { key: "assistido",   label: `Assistidos (${contagem("assistido")})`,    icon: HandHeart     },
+    { key: "instrutor",   label: `Instrutores (${contagem("instrutor")})`,   icon: GraduationCap },
+    { key: "trabalhador", label: `Voluntários (${contagem("trabalhador")})`, icon: Briefcase     },
   ]
 
   const opcoesCurso = [
     { value: "", label: "Todos os cursos" },
     ...CURSOS.map(c => ({ value: c, label: c })),
   ]
+
+  const mostrarFiltroCurso = activeTab === "aluno"
 
   return (
     <div className="flex flex-col gap-6">
@@ -230,8 +264,8 @@ function SecaoPresencas() {
             />
           </div>
 
-          {/* Filtro de curso — só aparece na aba Alunos */}
-          {activeTab === "aluno" && (
+          {/* Filtro de curso — só na aba Alunos */}
+          {mostrarFiltroCurso && (
             <div className="flex flex-col gap-2">
               <label className="flex items-center gap-2 text-sm font-medium">
                 <BookOpen className="h-4 w-4" />Filtrar por curso
@@ -239,7 +273,7 @@ function SecaoPresencas() {
               <div ref={cursoRef} className="relative">
                 <button
                   type="button"
-                  onClick={() => setCursoAberto((v) => !v)}
+                  onClick={() => setCursoAberto(v => !v)}
                   className="flex items-center gap-2.5 pl-10 pr-4 py-2.5 text-sm text-left outline-none transition-all"
                   style={{
                     width: 250,
@@ -250,57 +284,38 @@ function SecaoPresencas() {
                     cursor: "pointer",
                   }}
                 >
-                  <svg
-                    className="absolute pointer-events-none"
+                  <svg className="absolute pointer-events-none"
                     style={{ left: 14, top: "50%", transform: "translateY(-50%)" }}
                     width="15" height="15" viewBox="0 0 24 24"
-                    fill="none" stroke="var(--muted-foreground)" strokeWidth="2"
-                  >
+                    fill="none" stroke="var(--muted-foreground)" strokeWidth="2">
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM9 12l2 2 4-4" />
                   </svg>
                   <span className="flex-1">{filtroCurso || "Todos os cursos"}</span>
-                  <ChevronDown
-                    className="h-4 w-4 flex-shrink-0 transition-transform duration-200"
-                    style={{
-                      color: "var(--muted-foreground)",
-                      transform: cursoAberto ? "rotate(180deg)" : "rotate(0deg)",
-                    }}
-                  />
+                  <ChevronDown className="h-4 w-4 flex-shrink-0 transition-transform duration-200"
+                    style={{ color: "var(--muted-foreground)", transform: cursoAberto ? "rotate(180deg)" : "rotate(0deg)" }} />
                 </button>
                 {cursoAberto && (
-                  <div
-                    className="absolute top-full left-0 z-20 mt-1"
+                  <div className="absolute top-full left-0 z-20 mt-1"
                     style={{
                       width: 230,
                       background: "color-mix(in srgb, var(--card) 96%, transparent)",
-                      backdropFilter: "blur(16px)",
-                      WebkitBackdropFilter: "blur(16px)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "var(--radius)",
-                      boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
-                      padding: "6px",
+                      backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
+                      border: "1px solid var(--border)", borderRadius: "var(--radius)",
+                      boxShadow: "0 8px 32px rgba(0,0,0,0.18)", padding: "6px",
                     }}
                   >
                     {opcoesCurso.map(({ value, label }) => {
-                      const selecionado = filtroCurso === value
+                      const sel = filtroCurso === value
                       return (
-                        <button
-                          key={value || "__todos__"}
-                          type="button"
+                        <button key={value || "__todos__"} type="button"
                           onClick={() => { setFiltroCurso(value); setCursoAberto(false) }}
-                          className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left rounded-md transition-colors"
-                          style={{
-                            background: selecionado ? "var(--secondary)" : "none",
-                            border: "none",
-                            cursor: "pointer",
-                            color: "var(--foreground)",
-                            fontWeight: selecionado ? 500 : 400,
-                          }}
-                          onMouseEnter={(e) => { if (!selecionado) e.currentTarget.style.background = "var(--secondary)" }}
-                          onMouseLeave={(e) => { if (!selecionado) e.currentTarget.style.background = "none" }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left rounded-md"
+                          style={{ background: sel ? "var(--secondary)" : "none", border: "none", cursor: "pointer", color: "var(--foreground)", fontWeight: sel ? 500 : 400 }}
+                          onMouseEnter={e => { if (!sel) e.currentTarget.style.background = "var(--secondary)" }}
+                          onMouseLeave={e => { if (!sel) e.currentTarget.style.background = "none" }}
                         >
                           <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center">
-                            {selecionado && <Check className="h-3.5 w-3.5" style={{ color: "var(--primary)" }} />}
+                            {sel && <Check className="h-3.5 w-3.5" style={{ color: "var(--primary)" }} />}
                           </span>
                           {label}
                         </button>
@@ -333,12 +348,12 @@ function SecaoPresencas() {
         />
       </div>
 
-      {/* Abas de tipo */}
+      {/* Abas */}
       <div className="flex gap-1 overflow-x-auto border-b border-border">
         {tabs.map((tab) => (
           <button
             key={tab.key}
-            onClick={() => { setActiveTab(tab.key); setFiltroCurso("") }}
+            onClick={() => { setActiveTab(tab.key); setFiltroCurso(""); setConfirmandoId(null) }}
             className={`flex shrink-0 items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
               activeTab === tab.key
                 ? "border-primary text-primary"
@@ -346,7 +361,7 @@ function SecaoPresencas() {
             }`}
           >
             <tab.icon className="h-3.5 w-3.5" />
-            {tab.label} ({tab.count})
+            {tab.label}
           </button>
         ))}
       </div>
@@ -372,6 +387,7 @@ function SecaoPresencas() {
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Data</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Horário</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground hidden md:table-cell">Código</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -384,22 +400,49 @@ function SecaoPresencas() {
                     >
                       <td className="px-4 py-3 font-medium">{p.pessoaNome}</td>
                       <td className="px-4 py-3">
-                        <Badge variant={BADGE_VARIANT[p.tipo] ?? "outline"}>
-                          {p.tipoLabel === "Trabalhador"
-                            ? "Voluntário"
-                            : p.tipoLabel === "Assistidos"
-                            ? "T.A Silvana Maria"
-                            : p.tipoLabel}
+                        <Badge variant={BADGE_VARIANT[isAssistido(p) ? "assistido" : p.tipo] ?? "outline"}>
+                          {isAssistido(p) ? "T.A Silvana Maria" : labelTipo(p.tipoLabel)}
                         </Badge>
                       </td>
                       <td className="px-4 py-3">
-                        {p.data} -{" "}
+                        {p.data} —{" "}
                         <span className="text-sm font-medium text-foreground capitalize">
                           {new Date(selectedDate + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long" })}
                         </span>
                       </td>
                       <td className="px-4 py-3 font-mono text-sm">{p.horario}</td>
                       <td className="px-4 py-3 font-mono text-xs text-muted-foreground hidden md:table-cell">{p.codigoBarras}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-1">
+                          {confirmandoId === p.id ? (
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => deletarPresenca(p.id)}
+                                className="h-8 px-3 text-xs font-semibold rounded-md"
+                                style={{ background: "var(--destructive)", color: "#fff", border: "none", cursor: "pointer" }}
+                              >
+                                Confirmar
+                              </button>
+                              <button
+                                onClick={() => setConfirmandoId(null)}
+                                className="h-8 px-3 text-xs font-semibold rounded-md"
+                                style={{ background: "var(--muted)", color: "var(--muted-foreground)", border: "1px solid var(--border)", cursor: "pointer" }}
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setConfirmandoId(p.id)}
+                              className="flex h-8 w-8 items-center justify-center rounded-md transition-colors"
+                              style={{ background: "none", border: "1px solid var(--border)", color: "var(--destructive)", cursor: "pointer" }}
+                              title="Remover presença"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -415,12 +458,12 @@ function SecaoPresencas() {
 // ─── Sub-componente: Seção de Cadastros ──────────────────────────────────────
 
 function SecaoCadastros() {
-  const [pessoas, setPessoas]         = useState<Pessoa[]>([])
-  const [loading, setLoading]         = useState(true)
-  const [activeTab, setActiveTab]     = useState<TabType>("todos")
-  const [search, setSearch]           = useState("")
-  const [filtroCurso, setFiltroCurso] = useState("")
-  const [cursoAberto, setCursoAberto] = useState(false)
+  const [pessoas, setPessoas]           = useState<Pessoa[]>([])
+  const [loading, setLoading]           = useState(true)
+  const [activeTab, setActiveTab]       = useState<TabType>("todos")
+  const [search, setSearch]             = useState("")
+  const [filtroCurso, setFiltroCurso]   = useState("")
+  const [cursoAberto, setCursoAberto]   = useState(false)
   const cursoRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -439,7 +482,6 @@ function SecaoCadastros() {
       if (filtroCurso) params.set("curso", filtroCurso)
       const res = await fetch(`/api/pessoas?${params}`)
       const data = await res.json()
-      // Garante ordenação alfabética vinda do servidor; ordena também no cliente como fallback
       const ordenadas: Pessoa[] = [...data].sort((a, b) =>
         a.nome.localeCompare(b.nome, "pt-BR")
       )
@@ -450,11 +492,10 @@ function SecaoCadastros() {
 
   useEffect(() => { buscar() }, [buscar])
 
-  const contagem = (tipo: string) => pessoas.filter(p => p.tipo === tipo).length
+  const contagem = (tab: TabType) =>
+    tab === "todos" ? pessoas.length : pessoas.filter(p => matchTab(p, tab)).length
 
-  const filtradasPorTipo = activeTab === "todos"
-    ? pessoas
-    : pessoas.filter(p => p.tipo === activeTab)
+  const filtradasPorTipo = pessoas.filter(p => matchTab(p, activeTab))
 
   const filtradas: Pessoa[] = search.trim()
     ? filtradasPorTipo.filter(p =>
@@ -464,49 +505,42 @@ function SecaoCadastros() {
       )
     : filtradasPorTipo
 
-  // ── CSV de cadastros (ordem alfabética) ────────────────────────────────────
   function exportarCSV() {
+    const comCurso = activeTab === "aluno" || activeTab === "assistido" || activeTab === "todos"
     const linhas = [
-      ["Nome", "Tipo", "Código de Barras", ...(activeTab === "aluno" || activeTab === "todos" ? ["Curso"] : [])],
+      ["Nome", "Tipo", "Código de Barras", ...(comCurso ? ["Curso"] : [])],
       ...filtradas.map(p => [
         p.nome,
-        p.tipoLabel === "Trabalhador" ? "Voluntário" : p.tipoLabel,
+        isAssistido(p) ? "T.A Silvana Maria" : labelTipo(p.tipoLabel),
         p.codigoBarras,
-        ...(activeTab === "aluno" || activeTab === "todos" ? [p.curso ?? ""] : []),
+        ...(comCurso ? [p.curso ?? ""] : []),
       ]),
     ]
     const csv = linhas.map(l => l.map(c => `"${c}"`).join(",")).join("\n")
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
-    a.href = url
-    const sufixo = activeTab === "todos" ? "todos" : activeTab
-    a.download = `cadastros-${sufixo}.csv`
-    a.click()
+    a.href = url; a.download = `cadastros-${activeTab}.csv`; a.click()
     URL.revokeObjectURL(url)
   }
 
-  // ── Impressão de todos os crachás ──────────────────────────────────────────
   function imprimirTodosCrachas() {
     const lista = filtradas.map(p => ({
-      nome: p.nome,
-      tipo: p.tipo,
-      tipoLabel: p.tipoLabel,
-      codigoBarras: p.codigoBarras,
+      nome: p.nome, tipo: p.tipo, tipoLabel: p.tipoLabel, codigoBarras: p.codigoBarras,
     }))
-    const tipoLabel = activeTab === "todos" ? "Todos os Cadastrados" : filtradas[0]?.tipoLabel ?? activeTab
-    const html = construirHTMLCrachas(lista, `Crachás — ${tipoLabel}`)
+    const titulo = activeTab === "todos" ? "Todos os Cadastrados" : filtradas[0]?.tipoLabel ?? activeTab
+    const html = construirHTMLCrachas(lista, `Crachás — ${titulo}`)
     const w = window.open("", "_blank")
-    w?.document.write(html)
-    w?.document.close()
+    w?.document.write(html); w?.document.close()
   }
 
-  const tabs: { key: TabType; label: string; count: number; icon: React.ElementType }[] = [
-    { key: "todos",       label: "Todos",       count: pessoas.length,          icon: FileText      },
-    { key: "paciente",    label: "Pacientes",   count: contagem("paciente"),    icon: Users         },
-    { key: "aluno",       label: "Alunos",      count: contagem("aluno"),       icon: BookOpen      },
-    { key: "instrutor",   label: "Instrutores", count: contagem("instrutor"),   icon: GraduationCap },
-    { key: "trabalhador", label: "Voluntários", count: contagem("trabalhador"), icon: Briefcase     },
+  const tabs: { key: TabType; label: string; icon: React.ElementType }[] = [
+    { key: "todos",       label: `Todos (${contagem("todos")})`,             icon: FileText      },
+    { key: "paciente",    label: `Pacientes (${contagem("paciente")})`,      icon: Users         },
+    { key: "aluno",       label: `Alunos (${contagem("aluno")})`,            icon: BookOpen      },
+    { key: "assistido",   label: `Assistidos (${contagem("assistido")})`,    icon: HandHeart     },
+    { key: "instrutor",   label: `Instrutores (${contagem("instrutor")})`,   icon: GraduationCap },
+    { key: "trabalhador", label: `Voluntários (${contagem("trabalhador")})`, icon: Briefcase     },
   ]
 
   const opcoesCurso = [
@@ -514,13 +548,15 @@ function SecaoCadastros() {
     ...CURSOS.map(c => ({ value: c, label: c })),
   ]
 
+  const mostrarFiltroCurso = activeTab === "aluno"
+  const mostrarColCurso    = activeTab === "aluno" || activeTab === "assistido" || activeTab === "todos"
+
   return (
     <div className="flex flex-col gap-6">
       {/* Ações */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-end gap-4">
-          {/* Filtro de curso — só aparece na aba Alunos */}
-          {activeTab === "aluno" && (
+          {mostrarFiltroCurso && (
             <div className="flex flex-col gap-2">
               <label className="flex items-center gap-2 text-sm font-medium">
                 <BookOpen className="h-4 w-4" />Filtrar por curso
@@ -528,7 +564,7 @@ function SecaoCadastros() {
               <div ref={cursoRef} className="relative">
                 <button
                   type="button"
-                  onClick={() => setCursoAberto((v) => !v)}
+                  onClick={() => setCursoAberto(v => !v)}
                   className="flex items-center gap-2.5 pl-10 pr-4 py-2.5 text-sm text-left outline-none transition-all"
                   style={{
                     width: 250,
@@ -539,57 +575,38 @@ function SecaoCadastros() {
                     cursor: "pointer",
                   }}
                 >
-                  <svg
-                    className="absolute pointer-events-none"
+                  <svg className="absolute pointer-events-none"
                     style={{ left: 14, top: "50%", transform: "translateY(-50%)" }}
                     width="15" height="15" viewBox="0 0 24 24"
-                    fill="none" stroke="var(--muted-foreground)" strokeWidth="2"
-                  >
+                    fill="none" stroke="var(--muted-foreground)" strokeWidth="2">
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM9 12l2 2 4-4" />
                   </svg>
                   <span className="flex-1">{filtroCurso || "Todos os cursos"}</span>
-                  <ChevronDown
-                    className="h-4 w-4 flex-shrink-0 transition-transform duration-200"
-                    style={{
-                      color: "var(--muted-foreground)",
-                      transform: cursoAberto ? "rotate(180deg)" : "rotate(0deg)",
-                    }}
-                  />
+                  <ChevronDown className="h-4 w-4 flex-shrink-0 transition-transform duration-200"
+                    style={{ color: "var(--muted-foreground)", transform: cursoAberto ? "rotate(180deg)" : "rotate(0deg)" }} />
                 </button>
                 {cursoAberto && (
-                  <div
-                    className="absolute top-full left-0 z-20 mt-1"
+                  <div className="absolute top-full left-0 z-20 mt-1"
                     style={{
                       width: 230,
                       background: "color-mix(in srgb, var(--card) 96%, transparent)",
-                      backdropFilter: "blur(16px)",
-                      WebkitBackdropFilter: "blur(16px)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "var(--radius)",
-                      boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
-                      padding: "6px",
+                      backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
+                      border: "1px solid var(--border)", borderRadius: "var(--radius)",
+                      boxShadow: "0 8px 32px rgba(0,0,0,0.18)", padding: "6px",
                     }}
                   >
                     {opcoesCurso.map(({ value, label }) => {
-                      const selecionado = filtroCurso === value
+                      const sel = filtroCurso === value
                       return (
-                        <button
-                          key={value || "__todos__"}
-                          type="button"
+                        <button key={value || "__todos__"} type="button"
                           onClick={() => { setFiltroCurso(value); setCursoAberto(false) }}
-                          className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left rounded-md transition-colors"
-                          style={{
-                            background: selecionado ? "var(--secondary)" : "none",
-                            border: "none",
-                            cursor: "pointer",
-                            color: "var(--foreground)",
-                            fontWeight: selecionado ? 500 : 400,
-                          }}
-                          onMouseEnter={(e) => { if (!selecionado) e.currentTarget.style.background = "var(--secondary)" }}
-                          onMouseLeave={(e) => { if (!selecionado) e.currentTarget.style.background = "none" }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left rounded-md"
+                          style={{ background: sel ? "var(--secondary)" : "none", border: "none", cursor: "pointer", color: "var(--foreground)", fontWeight: sel ? 500 : 400 }}
+                          onMouseEnter={e => { if (!sel) e.currentTarget.style.background = "var(--secondary)" }}
+                          onMouseLeave={e => { if (!sel) e.currentTarget.style.background = "none" }}
                         >
                           <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center">
-                            {selecionado && <Check className="h-3.5 w-3.5" style={{ color: "var(--primary)" }} />}
+                            {sel && <Check className="h-3.5 w-3.5" style={{ color: "var(--primary)" }} />}
                           </span>
                           {label}
                         </button>
@@ -606,7 +623,6 @@ function SecaoCadastros() {
           </p>
         </div>
 
-        {/* Botões de ação */}
         <div className="flex gap-2">
           <Button variant="outline" onClick={exportarCSV} disabled={loading || filtradas.length === 0}>
             <Download className="mr-2 h-4 w-4" />Exportar CSV
@@ -628,7 +644,7 @@ function SecaoCadastros() {
         />
       </div>
 
-      {/* Abas de tipo */}
+      {/* Abas */}
       <div className="flex gap-1 overflow-x-auto border-b border-border">
         {tabs.map((tab) => (
           <button
@@ -641,7 +657,7 @@ function SecaoCadastros() {
             }`}
           >
             <tab.icon className="h-3.5 w-3.5" />
-            {tab.label} ({tab.count})
+            {tab.label}
           </button>
         ))}
       </div>
@@ -664,7 +680,7 @@ function SecaoCadastros() {
                   <tr className="border-b border-border">
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Nome</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Tipo</th>
-                    {(activeTab === "aluno" || activeTab === "todos") && (
+                    {mostrarColCurso && (
                       <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground hidden md:table-cell">Curso</th>
                     )}
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground hidden md:table-cell">Código</th>
@@ -680,15 +696,11 @@ function SecaoCadastros() {
                     >
                       <td className="px-4 py-3 font-medium">{p.nome}</td>
                       <td className="px-4 py-3">
-                        <Badge variant={BADGE_VARIANT[p.tipo] ?? "outline"}>
-                          {p.tipoLabel === "Trabalhador"
-                            ? "Voluntário"
-                            : p.tipoLabel === "Assistidos"
-                            ? "T.A Silvana Maria"
-                            : p.tipoLabel}
+                        <Badge variant={BADGE_VARIANT[isAssistido(p) ? "assistido" : p.tipo] ?? "outline"}>
+                          {isAssistido(p) ? "T.A Silvana Maria" : labelTipo(p.tipoLabel)}
                         </Badge>
                       </td>
-                      {(activeTab === "aluno" || activeTab === "todos") && (
+                      {mostrarColCurso && (
                         <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">
                           {p.curso ?? <span className="italic opacity-50">—</span>}
                         </td>
@@ -712,23 +724,12 @@ export default function RelatoriosPage() {
   const [secao, setSecao] = useState<SecaoType>("presencas")
 
   const secoes: { key: SecaoType; label: string; descricao: string; icon: React.ElementType }[] = [
-    {
-      key: "presencas",
-      label: "Presenças",
-      descricao: "Histórico de presenças por data",
-      icon: ClipboardList,
-    },
-    {
-      key: "cadastros",
-      label: "Cadastros",
-      descricao: "Todas as pessoas registradas no sistema",
-      icon: UserSquare2,
-    },
+    { key: "presencas", label: "Presenças",  descricao: "Histórico de presenças por data",              icon: ClipboardList },
+    { key: "cadastros", label: "Cadastros",  descricao: "Todas as pessoas registradas no sistema",      icon: UserSquare2   },
   ]
 
   return (
     <div className="flex flex-col gap-8">
-      {/* Cabeçalho */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">Relatórios</h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -768,12 +769,10 @@ export default function RelatoriosPage() {
         })}
       </div>
 
-      {/* Descrição da seção ativa */}
       <p className="text-sm text-muted-foreground -mt-4">
         {secoes.find(s => s.key === secao)?.descricao}
       </p>
 
-      {/* Conteúdo */}
       {secao === "presencas" ? <SecaoPresencas /> : <SecaoCadastros />}
     </div>
   )

@@ -1,10 +1,10 @@
 // app/(app)/dashboard/page.tsx
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Users, GraduationCap, CalendarCheck, UserCheck, Clock, Loader2 } from "lucide-react"
+import { Users, GraduationCap, CalendarCheck, UserCheck, Clock, Loader2, Trash2 } from "lucide-react"
 
 interface Stats {
   totalPessoasAtendidas: number
@@ -28,6 +28,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [presencas, setPresencas] = useState<Presenca[]>([])
   const [loading, setLoading] = useState(true)
+  const [confirmandoId, setConfirmandoId] = useState<number | null>(null)
 
   const currentDate = new Date().toLocaleDateString("pt-BR", {
     weekday: "long",
@@ -36,25 +37,34 @@ export default function DashboardPage() {
     year: "numeric",
   })
 
-  useEffect(() => {
-    async function fetchDashboard() {
-      try {
-        const res = await fetch("/api/dashboard")
-        const data = await res.json()
-        setStats(data.stats)
-        setPresencas(data.ultimasPresencas)
-      } catch (err) {
-        console.error(err)
-      } finally {
-        setLoading(false)
-      }
+  const fetchDashboard = useCallback(async () => {
+    try {
+      const res = await fetch("/api/dashboard")
+      const data = await res.json()
+      setStats(data.stats)
+      setPresencas(data.ultimasPresencas)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
     }
+  }, [])
 
+  useEffect(() => {
     fetchDashboard()
-    // Atualiza a cada 30 segundos
     const interval = setInterval(fetchDashboard, 30000)
     return () => clearInterval(interval)
-  }, [])
+  }, [fetchDashboard])
+
+  async function deletarPresenca(id: number) {
+    try {
+      await fetch(`/api/presenca/${id}`, { method: "DELETE" })
+      setConfirmandoId(null)
+      fetchDashboard()
+    } catch (err) {
+      console.error("Erro ao deletar presença", err)
+    }
+  }
 
   const statCards = stats
     ? [
@@ -68,14 +78,14 @@ export default function DashboardPage() {
         {
           label: "Total de Instrutores e Voluntários",
           value: stats.totalEquipe,
-          description: stats.totalEquipeDesc.replace('Trabalhadores', 'Voluntários'),
+          description: stats.totalEquipeDesc.replace("Trabalhadores", "Voluntários"),
           icon: GraduationCap,
           color: "var(--accent)",
         },
         {
           label: "Presenças Hoje",
           value: stats.totalPresencasHoje,
-          description: stats.presencasHojeDesc.replace('trabalhadors', 'Voluntários') || "Nenhuma presença hoje",
+          description: stats.presencasHojeDesc.replace("trabalhadors", "Voluntários") || "Nenhuma presença hoje",
           icon: CalendarCheck,
           color: "var(--success)",
         },
@@ -157,19 +167,73 @@ export default function DashboardPage() {
                         <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Tipo</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Horário</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground hidden md:table-cell">Código</th>
+                        <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Ações</th>
                       </tr>
                     </thead>
                     <tbody>
                       {presencas.map((p) => (
-                        <tr key={p.id} className="border-b border-border last:border-0 hover:bg-secondary/50">
+                        <tr
+                          key={p.id}
+                          className="border-b border-border last:border-0 transition-colors"
+                          onMouseEnter={(e) => (e.currentTarget.style.background = "var(--secondary)")}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                        >
                           <td className="px-4 py-3 font-medium">{p.pessoaNome}</td>
                           <td className="px-4 py-3">
                             <Badge variant={tipoBadge[p.tipo] ?? "outline"}>
-                              {tipoLabel[p.tipo === 'Assistidos' ? 'T.A Silvana Maria' : p.tipo] ?? p.tipo}
+                              {tipoLabel[p.tipo] ?? p.tipo}
                             </Badge>
                           </td>
                           <td className="px-4 py-3 font-mono text-sm">{p.horario}</td>
-                          <td className="px-4 py-3 font-mono text-xs text-muted-foreground hidden md:table-cell">{p.codigoBarras}</td>
+                          <td className="px-4 py-3 font-mono text-xs text-muted-foreground hidden md:table-cell">
+                            {p.codigoBarras}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center justify-end gap-1">
+                              {confirmandoId === p.id ? (
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={() => deletarPresenca(p.id)}
+                                    className="h-8 px-3 text-xs font-semibold rounded-md"
+                                    style={{
+                                      background: "var(--destructive)",
+                                      color: "#fff",
+                                      border: "none",
+                                      cursor: "pointer",
+                                    }}
+                                  >
+                                    Confirmar
+                                  </button>
+                                  <button
+                                    onClick={() => setConfirmandoId(null)}
+                                    className="h-8 px-3 text-xs font-semibold rounded-md"
+                                    style={{
+                                      background: "var(--muted)",
+                                      color: "var(--muted-foreground)",
+                                      border: "1px solid var(--border)",
+                                      cursor: "pointer",
+                                    }}
+                                  >
+                                    Cancelar
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => setConfirmandoId(p.id)}
+                                  className="flex h-8 w-8 items-center justify-center rounded-md transition-colors"
+                                  style={{
+                                    background: "none",
+                                    border: "1px solid var(--border)",
+                                    color: "var(--destructive)",
+                                    cursor: "pointer",
+                                  }}
+                                  title="Remover presença"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
