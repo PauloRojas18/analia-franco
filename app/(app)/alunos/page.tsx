@@ -658,7 +658,7 @@ export default function AlunosPage() {
 
                     {cursoAberto && (
                       <div
-                        className="absolute top-full left-0 right-0 z-20 mt-1"
+                        className="absolute top-full left-0 right-0 z-20 mt-1 overflow-y-auto"
                         style={{
                           background: "color-mix(in srgb, var(--card) 96%, transparent)",
                           backdropFilter: "blur(16px)",
@@ -667,6 +667,7 @@ export default function AlunosPage() {
                           borderRadius: "var(--radius)",
                           boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
                           padding: "6px",
+                          maxHeight: "220px", // altura máxima antes de aparecer scroll
                         }}
                       >
                         {CURSOS.map((curso) => {
