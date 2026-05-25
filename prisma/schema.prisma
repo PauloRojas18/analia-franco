@@ -10,91 +10,108 @@ model Usuario {
   id Int @id @default(autoincrement())
   email String @unique
   senha String
-
 }
 
 model Paciente {
-  id           Int       @id @default(autoincrement())
-  nome         String
-  telefone     String
-  ativo        Boolean   @default(true)
-  codigoBarras String    @unique
-  createdAt    DateTime  @default(now())
-  presencas    Presenca[]
-  observacoes Observacao[]
-
+  id                    Int       @id @default(autoincrement())
+  nome                  String
+  telefone              String
+  endereco              String    @default("")
+  ativo                 Boolean   @default(true)
+  codigoBarras          String    @unique
+  createdAt             DateTime  @default(now())
+  
+  // Novos campos para prontuário
+  totalConsultas        Int       @default(4)
+  dataPrimeiraConsulta  DateTime?
+  dataUltimaConsulta    DateTime?
+  
+  presencas             Presenca[]
+  observacoes           Observacao[]
 }
 
 model Instrutor {
-  id Int @id @default(autoincrement())
-  nome String 
-  telefone String
-  email String @unique
-  ativo Boolean @default(true)
-  codigoBarras String @unique
-  createdAt DateTime @default(now())
-  presencas Presenca[]  
-
+  id            Int       @id @default(autoincrement())
+  nome          String
+  telefone      String
+  email         String    @unique
+  endereco      String    @default("")
+  ativo         Boolean   @default(true)
+  codigoBarras  String    @unique
+  createdAt     DateTime  @default(now())
+  presencas     Presenca[]
 }
 
 model Trabalhador {
-  id Int @id @default(autoincrement())
-  nome String 
-  telefone String
-  email String @unique
-  ativo Boolean @default(true)
-  codigoBarras String @unique
-  createdAt DateTime @default(now())
-  presencas Presenca[]  
-
+  id            Int       @id @default(autoincrement())
+  nome          String
+  telefone      String
+  email         String    @unique
+  endereco      String    @default("")
+  ativo         Boolean   @default(true)
+  codigoBarras  String    @unique
+  createdAt     DateTime  @default(now())
+  presencas     Presenca[]
 }
 
 model Aluno {
-  id           Int       @id @default(autoincrement())
-  nome         String
-  blocoEstudo  String
-  telefone     String
-  oficina      String?    
-  ativo        Boolean   @default(true)
-  codigoBarras String    @unique
-  createdAt    DateTime  @default(now())
-  presencas    Presenca[]
+  id            Int       @id @default(autoincrement())
+  nome          String
+  blocoEstudo   String
+  telefone      String
+  endereco      String    @default("")
+  oficina       String?
+  ativo         Boolean   @default(true)
+  codigoBarras  String    @unique
+  createdAt     DateTime  @default(now())
+  presencas     Presenca[]
 }
 
 model Presenca {
-  id  Int @id @default(autoincrement())
-  tipo  TipoPessoa
-  horario DateTime @default(now())
-  codigoBarras String
-
-  pacienteId  Int?
-  instrutorId Int?
-  trabalhadorId Int?
-  alunoId Int?
-
-  paciente Paciente?  @relation(fields: [pacienteId], references: [id])
-  instrutor Instrutor?  @relation(fields: [instrutorId], references: [id])
-  trabalhador Trabalhador?  @relation(fields: [trabalhadorId], references: [id])
-  aluno Aluno?  @relation(fields: [alunoId], references: [id])
-
+  id              Int           @id @default(autoincrement())
+  tipo            TipoPessoa
+  horario         DateTime      @default(now())
+  codigoBarras    String
+  
+  pacienteId      Int?
+  instrutorId     Int?
+  trabalhadorId   Int?
+  alunoId         Int?
+  
+  paciente        Paciente?     @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  instrutor       Instrutor?    @relation(fields: [instrutorId], references: [id], onDelete: Cascade)
+  trabalhador     Trabalhador?  @relation(fields: [trabalhadorId], references: [id], onDelete: Cascade)
+  aluno           Aluno?        @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  
+  @@index([pacienteId])
+  @@index([instrutorId])
+  @@index([trabalhadorId])
+  @@index([alunoId])
+  @@index([codigoBarras])
 }
 
 model VinculoPessoa {
-  id             Int        @id @default(autoincrement())
-  codigoBarras   String     // código do crachá principal
-  tipoPrincipal  TipoPessoa
-  codigoSecund   String     // código do vínculo secundário
-  tipoSecund     TipoPessoa
+  id            Int        @id @default(autoincrement())
+  codigoBarras  String
+  tipoPrincipal TipoPessoa
+  codigoSecund  String
+  tipoSecund    TipoPessoa
+  
   @@unique([codigoBarras, tipoSecund])
+  @@index([codigoBarras])
+  @@index([codigoSecund])
 }
 
 model Observacao {
-  id         Int      @id @default(autoincrement())
+  id         Int       @id @default(autoincrement())
   pacienteId Int
-  numero     Int      // 1, 2, 3 ou 4
-  descricao  String
-  data       DateTime @default(now())
-  paciente   Paciente @relation(fields: [pacienteId], references: [id])
+  numero     Int       // 1, 2, 3, 4, 5, 6, 7, 8 etc (pode ter múltiplos ciclos)
+  descricao  String    @db.Text
+  data       DateTime  @default(now())
+  paciente   Paciente  @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  
+  @@unique([pacienteId, numero])
+  @@index([pacienteId])
 }
 
 enum TipoPessoa {
@@ -102,5 +119,4 @@ enum TipoPessoa {
   instrutor
   trabalhador
   aluno
-
 }

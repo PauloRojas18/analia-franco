@@ -18,6 +18,18 @@ export async function GET(req: Request) {
         ],
       } : undefined,
       orderBy: { nome: "asc" },
+      select: {
+        id: true,
+        nome: true,
+        telefone: true,
+        endereco: true,
+        ativo: true,
+        codigoBarras: true,
+        totalConsultas: true,
+        dataPrimeiraConsulta: true,
+        dataUltimaConsulta: true,
+        createdAt: true,
+      },
     })
 
     return NextResponse.json(pacientes)
@@ -29,12 +41,16 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { nome, telefone, } = await req.json()
+    const { nome, telefone, endereco } = await req.json()
 
     if (!nome || !telefone) {
-      return NextResponse.json({ error: "Todos os campos são obrigatórios" }, { status: 400 })
+      return NextResponse.json(
+        { error: "Nome e telefone são obrigatórios" },
+        { status: 400 }
+      )
     }
 
+    // Gerar próximo código de barras
     const ultimo = await db.paciente.findFirst({
       where: { codigoBarras: { startsWith: "CEFAFP" } },
       orderBy: { codigoBarras: "desc" },
@@ -45,7 +61,26 @@ export async function POST(req: Request) {
       : "000001"
 
     const paciente = await db.paciente.create({
-      data: { nome, telefone, codigoBarras: `CEFAFP${proximoNum}` },
+      data: {
+        nome,
+        telefone,
+        endereco: endereco || "",
+        codigoBarras: `CEFAFP${proximoNum}`,
+        totalConsultas: 4, // Padrão: 4 consultas
+        ativo: true,
+      },
+      select: {
+        id: true,
+        nome: true,
+        telefone: true,
+        endereco: true,
+        ativo: true,
+        codigoBarras: true,
+        totalConsultas: true,
+        dataPrimeiraConsulta: true,
+        dataUltimaConsulta: true,
+        createdAt: true,
+      },
     })
 
     return NextResponse.json(paciente, { status: 201 })
