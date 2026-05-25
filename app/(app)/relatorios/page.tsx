@@ -50,10 +50,11 @@ const BADGE_VARIANT: Record<string, "default" | "secondary" | "outline"> = {
 }
 
 const TIPO_COR: Record<string, { bg: string; accent: string; label: string }> = {
-  paciente:    { bg: "#1e6b94", accent: "#1a9e7a", label: "Paciente"    },
-  aluno:       { bg: "#6d28d9", accent: "#a78bfa", label: "Aluno"       },
-  instrutor:   { bg: "#b45309", accent: "#fbbf24", label: "Instrutor"   },
-  trabalhador: { bg: "#ea580c", accent: "#fdba74", label: "Trabalhador" },
+  paciente:       { bg: "#1e6b94", accent: "#1a9e7a", label: "Paciente"    },
+  aluno:          { bg: "#6d28d9", accent: "#a78bfa", label: "Aluno"       },
+  aluno_externo:  { bg: "#1d4e8f", accent: "#0e8476", label: "Aluno"       },
+  instrutor:      { bg: "#b45309", accent: "#fbbf24", label: "Instrutor"   },
+  trabalhador:    { bg: "#ea580c", accent: "#fdba74", label: "Trabalhador" },
 }
 
 const CURSOS = ["Conheça o Espiritismo", "Nosso Lar", "Passe", "Corrente Magnética", "Vibração"]
@@ -86,11 +87,15 @@ function gerarBarrasSVG(codigo: string): string {
 }
 
 function construirHTMLCrachas(
-  lista: { nome: string; tipo: string; tipoLabel: string; codigoBarras: string }[],
+  lista: { nome: string; tipo: string; tipoLabel: string; codigoBarras: string; curso?: string | null }[],
   titulo: string,
 ): string {
   const cartoes = lista.map((p) => {
-    const cor = TIPO_COR[p.tipo] ?? { bg: "#333", accent: "#666", label: p.tipoLabel }
+    // Resolver o tipoKey considerando assistidos e alunos externos
+    const isAssist = p.tipo === "aluno" && p.curso === "Assistidos"
+    const tipoKey = p.tipo === "aluno" && !isAssist ? "aluno_externo" : p.tipo
+    
+    const cor = TIPO_COR[tipoKey] ?? { bg: "#333", accent: "#666", label: p.tipoLabel }
     const barrasSVG = gerarBarrasSVG(p.codigoBarras)
     const iniciais = p.nome.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase()
     return `
@@ -526,7 +531,11 @@ function SecaoCadastros() {
 
   function imprimirTodosCrachas() {
     const lista = filtradas.map(p => ({
-      nome: p.nome, tipo: p.tipo, tipoLabel: p.tipoLabel, codigoBarras: p.codigoBarras,
+      nome: p.nome,
+      tipo: p.tipo,
+      tipoLabel: p.tipoLabel,
+      codigoBarras: p.codigoBarras,
+      curso: p.curso ?? null,
     }))
     const titulo = activeTab === "todos" ? "Todos os Cadastrados" : filtradas[0]?.tipoLabel ?? activeTab
     const html = construirHTMLCrachas(lista, `Crachás — ${titulo}`)

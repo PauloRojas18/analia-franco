@@ -16,6 +16,7 @@ interface Props {
 const TIPO_COR: Record<string, { bg: string; accent: string; label: string }> = {
   paciente:    { bg: "#1e6b94", accent: "#1a9e7a", label: "Paciente"   },
   aluno:       { bg: "#6d28d9", accent: "#a78bfa", label: "Aluno"      },
+  alunoCurso:  { bg: "#0f4c81", accent: "#14b8a6", label: "Aluno"      },
   instrutor:   { bg: "#b45309", accent: "#fbbf24", label: "Instrutor"  },
   trabalhador: { bg: "#ea580c", accent: "#fdba74", label: "Voluntário" },
 }
@@ -31,11 +32,14 @@ function temSigla(oficina: string): boolean {
 }
 
 export default function ModalCracha({ nome, tipo, codigoBarras, subtitulo, oficina, onFechar }: Props) {
-  const cor = TIPO_COR[tipo] ?? { bg: "#333", accent: "#666", label: tipo }
+  const isAssistido = subtitulo === "Assistidos"
+  const cor =
+  tipo === "aluno" && !isAssistido
+    ? TIPO_COR.alunoCurso
+    : TIPO_COR[tipo] ?? { bg: "#333", accent: "#666", label: tipo }
   const iniciais = nome.split(" ").filter(Boolean).slice(0, 2).map(n => n[0]).join("").toUpperCase()
   const [barcodeSVG, setBarcodeSVG] = useState<string>("")
 
-  const isAssistido = subtitulo === "Assistidos"
   const oficinaNome = oficina ?? ""
   const exibirSigla = temSigla(oficinaNome)
   const oficinaBadge = exibirSigla ? extrairSigla(oficinaNome) : oficinaNome
