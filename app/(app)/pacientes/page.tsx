@@ -7,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Search, Pencil, UserX, UserCheck, Trash2, Loader2, X, Unlink, IdCard, ClipboardList } from "lucide-react"
+import { Plus, Search, Pencil, UserX, UserCheck, Trash2, Loader2, X, Unlink, IdCard, ClipboardList, NotebookPen } from "lucide-react"
 import ModalCracha from "@/components/ModalCracha"
+import ModalCartaoTratamento from "@/components/ModalCartaoTratamento"
 
 interface Paciente {
   id: number
@@ -53,6 +54,9 @@ export default function PacientesPage() {
   const [primeiraVez, setPrimeiraVez] = useState("")
   const buscaRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const [cartaoAberto, setCartaoAberto] = useState<number | null>(null)
+
+  const pacienteCartao = pacientes.find(p => p.id === cartaoAberto)
 
   const buscarPacientes = useCallback(async () => {
     setLoading(true)
@@ -250,6 +254,10 @@ export default function PacientesPage() {
                             onClick={() => router.push(`/pacientes/${p.id}`)}>
                             <ClipboardList className="h-4 w-4" />
                           </Button>
+                          <Button variant="default" size="icon" title="Cartão de Tratamento" style={{cursor:"pointer"}}
+                            onClick={() => setCartaoAberto(p.id)}>
+                            <NotebookPen   className="h-4 w-4" />
+                          </Button>
                           <Button variant="default" size="icon" title="Ver Crachá" style={{cursor:"pointer"}}
                             onClick={() => setCrachaAberto({ nome: p.nome, tipo: "paciente", codigoBarras: p.codigoBarras })}>
                             <IdCard className="h-4 w-4" />
@@ -289,6 +297,15 @@ export default function PacientesPage() {
         </CardContent>
       </Card>
 
+      {pacienteCartao && (
+        <ModalCartaoTratamento
+          pacienteId={pacienteCartao.id}
+          nome={pacienteCartao.nome}
+          codigoBarras={pacienteCartao.codigoBarras}
+          onFechar={() => setCartaoAberto(null)}
+        />
+      )}
+      
       {/* Modal */}
       {modalAberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

@@ -6,9 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
   ArrowLeft, Phone, MapPin, IdCard, Save, Loader2,
-  ClipboardList, CalendarDays, ChevronLeft, ChevronRight, Plus,
+  ClipboardList, CalendarDays, ChevronLeft, ChevronRight, Plus, NotebookPen
 } from "lucide-react"
 import ModalCracha from "@/components/ModalCracha"
+import ModalCartaoTratamento from "@/components/ModalCartaoTratamento"
 
 /* ─── Types ─────────────────────────────────────────────────────────── */
 
@@ -248,6 +249,8 @@ export default function ProntuarioPage() {
 
   const VISITAS = gerarVisitas(totalConsultas)
 
+  const [cartaoAberto, setCartaoAberto] = useState<number | null>(null)
+
   /* fetch inicial */
   const buscar = useCallback(async () => {
     setLoading(true)
@@ -475,10 +478,30 @@ export default function ProntuarioPage() {
               >
                 <IdCard className="h-3.5 w-3.5" /> Ver Crachá
               </button>
+              <button
+                onClick={() => setCartaoAberto(paciente.id)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 9,
+                  padding: "4px 12px", borderRadius: "var(--radius)",
+                  background: "#33789e", border: "1px solid azure",
+                  color: "azure", cursor: "pointer", fontSize: 13, fontWeight: 500,
+                }}
+              >
+                <NotebookPen className="h-3.5 w-3.5" /> Ver Cartão
+              </button>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {cartaoAberto && paciente && (
+        <ModalCartaoTratamento
+          pacienteId={paciente.id}
+          nome={paciente.nome}
+          codigoBarras={paciente.codigoBarras}
+          onFechar={() => setCartaoAberto(null)}
+        />
+      )}
 
       {/* ── Layout principal ── */}
       {/* CORRIGIDO: Usando flex-col em mobile, grid em lg, e removendo scroll das abas */}
